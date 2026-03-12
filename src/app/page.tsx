@@ -62,6 +62,10 @@ export default function Home() {
           .order("created_at", { ascending: true }),
       ]);
 
+      if (tasksRes.error) console.error("Failed to load tasks:", tasksRes.error.message);
+      if (entriesRes.error) console.error("Failed to load time entries:", entriesRes.error.message);
+      if (messagesRes.error) console.error("Failed to load messages:", messagesRes.error.message);
+
       if (tasksRes.data) setTasks(tasksRes.data as Task[]);
       if (entriesRes.data) setTimeEntries(entriesRes.data as TimeEntry[]);
       if (messagesRes.data) setChatMessages(messagesRes.data as ChatMessage[]);
@@ -229,7 +233,11 @@ export default function Home() {
         })
         .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
         .single();
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to add task:", error.message);
+        return;
+      }
+      if (data) {
         setTasks((prev) => [data as Task, ...prev]);
       }
     },
@@ -252,7 +260,11 @@ export default function Home() {
         })
         .select()
         .single();
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to clock in:", error.message);
+        return;
+      }
+      if (data) {
         setTimeEntries((prev) => [data as TimeEntry, ...prev]);
       }
     },
@@ -283,7 +295,11 @@ export default function Home() {
         .insert({ sender_id: user.id, text })
         .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
         .single();
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to send message:", error.message);
+        return;
+      }
+      if (data) {
         setChatMessages((prev) => [...prev, data as ChatMessage]);
       }
     },
