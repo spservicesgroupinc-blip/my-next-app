@@ -70,12 +70,89 @@ export default function Home() {
 
     loadData();
 
+    // ── Real-time subscriptions ────────────────────────────────────────────────
+
+    // Chat messages — listen for new messages from anyone
+    const chatSub = supabase
+      .channel("chat-messages-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages" },
+        async (payload) => {
+          // Fetch the full message with sender profile
+          const { data } = await supabase
+            .from("chat_messages")
+            .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setChatMessages((prev) => {
+              // Avoid duplicates (optimistic update may already have added it)
+              if (prev.some((m) => m.id === data.id)) return prev;
+              return [...prev, data as ChatMessage];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Tasks — listen for inserts, updates, deletes
+    const taskSub = supabase
+      .channel("tasks-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "tasks" },
+        async (payload) => {
+          const { data } = await supabase
+            .from("tasks")
+            .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setTasks((prev) => {
+              if (prev.some((t) => t.id === data.id)) return prev;
+              return [data as Task, ...prev];
+            });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "tasks" },
+        async (payload) => {
+          const { data } = await supabase
+            .from("tasks")
+            .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setTasks((prev) =>
+              prev.map((t) => (t.id === data.id ? (data as Task) : t))
+            );
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "tasks" },
+        (payload) => {
+          setTasks((prev) => prev.filter((t) => t.id !== payload.old.id));
+        }
+      )
+      .subscribe();
+
     // Tab from URL
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as TabId | null;
     if (tab && ["tasks", "timeclock", "chat", "calendar"].includes(tab)) {
       setActiveTab(tab);
     }
+
+    // Return cleanup to unsubscribe on unmount / user change
+    return () => {
+      supabase.removeChannel(chatSub);
+      supabase.removeChannel(taskSub);
+    };
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Task handlers ────────────────────────────────────────────────────────────
