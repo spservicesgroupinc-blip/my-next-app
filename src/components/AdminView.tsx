@@ -32,6 +32,7 @@ export default function AdminView() {
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [newRate, setNewRate] = useState("0");
   const [addError, setAddError] = useState<string | null>(null);
   const [addLoading, setAddLoading] = useState(false);
@@ -102,6 +103,7 @@ export default function AdminView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: newEmail.trim(),
+        password: newPassword,
         full_name: newName.trim(),
         hourly_rate: parseFloat(newRate) || 0,
       }),
@@ -118,6 +120,7 @@ export default function AdminView() {
     setShowAddEmployee(false);
     setNewEmail("");
     setNewName("");
+    setNewPassword("");
     setNewRate("0");
     setAddLoading(false);
     await loadEmployees();
@@ -415,7 +418,7 @@ export default function AdminView() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900">Invite Employee</h2>
+              <h2 className="text-lg font-bold text-slate-900">Add Employee</h2>
               <button
                 onClick={() => setShowAddEmployee(false)}
                 className="p-1 text-slate-400 hover:text-slate-600"
@@ -459,6 +462,20 @@ export default function AdminView() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  placeholder="Min 6 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
                   Hourly Rate ($)
                 </label>
                 <input
@@ -475,11 +492,11 @@ export default function AdminView() {
                 disabled={addLoading}
                 className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 disabled:opacity-60"
               >
-                {addLoading ? "Sending invite…" : "Send Invite Email"}
+                {addLoading ? "Creating…" : "Create Employee"}
               </button>
             </form>
             <p className="mt-3 text-center text-xs text-slate-400">
-              Employee will receive an email to set their password.
+              Employee can log in immediately with the email and password you set.
             </p>
           </div>
         </div>
