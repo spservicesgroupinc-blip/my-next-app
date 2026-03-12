@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-orange-600: #ea580c;
+  --color-orange-500: #f97316;
+  --color-orange-100: #ffedd5;
+  --color-orange-50: #fff7ed;
+  --color-slate-900: #0f172a;
+  --color-slate-800: #1e293b;
+  --color-slate-700: #334155;
+  --color-slate-600: #475569;
+  --color-slate-500: #64748b;
+  --color-slate-400: #94a3b8;
+  --color-slate-300: #cbd5e1;
+  --color-slate-200: #e2e8f0;
+  --color-slate-100: #f1f5f9;
+  --color-slate-50: #f8fafc;
+  --color-emerald-600: #059669;
+  --color-emerald-500: #10b981;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-50: #ecfdf5;
+  --color-red-600: #dc2626;
+  --color-red-500: #ef4444;
+  --color-red-100: #fee2e2;
+  --color-red-50: #fef2f2;
+  --color-blue-600: #2563eb;
+  --color-blue-500: #3b82f6;
+  --color-blue-100: #dbeafe;
+  --color-amber-500: #f59e0b;
+  --color-amber-100: #fef3c7;
+  --color-purple-500: #a855f7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  overflow: hidden;
+  /* Prevent pull-to-refresh in PWA standalone */
+  overscroll-behavior-y: contain;
+  /* iOS safe areas */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* PWA standalone specific */
+@media all and (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: text;
+  }
+}
+
+/* Hide scrollbar for cleaner mobile look */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+/* Disable text selection on interactive elements */
+button, a, nav {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Slide up animation for modals */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Smooth touch scrolling */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent iOS rubber-banding on fixed elements */
+.fixed {
+  -webkit-transform: translateZ(0);
+}
+
+/* Input styling for mobile */
+input, select, textarea {
+  font-size: 16px !important; /* Prevent iOS zoom on focus */
+}
+
+/* Safe area bottom padding for bottom nav */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
 }
