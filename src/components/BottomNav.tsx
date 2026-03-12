@@ -1,21 +1,25 @@
 "use client";
 
-import { ClipboardList, Clock, MessageCircle, CalendarDays } from "lucide-react";
+import { ClipboardList, Clock, MessageCircle, CalendarDays, Shield } from "lucide-react";
 import { TabId } from "@/lib/types";
 
 interface BottomNavProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
+  isAdmin?: boolean;
 }
 
-const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
+const baseTabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "tasks", label: "Tasks", icon: ClipboardList },
   { id: "timeclock", label: "Time Clock", icon: Clock },
   { id: "chat", label: "Chat", icon: MessageCircle },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
 ];
 
-export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+const adminTab = { id: "admin" as TabId, label: "Admin", icon: Shield };
+
+export default function BottomNav({ activeTab, onTabChange, isAdmin }: BottomNavProps) {
+  const tabs = isAdmin ? [...baseTabs, adminTab] : baseTabs;
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around py-2">

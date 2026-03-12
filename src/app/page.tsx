@@ -8,6 +8,7 @@ import TasksView from "@/components/TasksView";
 import TimeClockView from "@/components/TimeClockView";
 import ChatView from "@/components/ChatView";
 import CalendarView from "@/components/CalendarView";
+import AdminView from "@/components/AdminView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
 import { TabId, Task, TimeEntry, ChatMessage } from "@/lib/types";
@@ -17,7 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function Home() {
   const router = useRouter();
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const supabase = createClient();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -375,9 +376,10 @@ export default function Home() {
         {activeTab === "calendar" && (
           <CalendarView tasks={tasks} onAddTask={handleAddTask} />
         )}
+        {activeTab === "admin" && isAdmin && <AdminView />}
       </main>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
 
       {canInstall && !installDismissed && (
         <InstallBanner onInstall={handleInstall} onDismiss={handleDismissInstall} />
