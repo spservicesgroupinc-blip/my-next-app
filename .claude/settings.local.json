@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find /c/Users/russe/my-next-app/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json -o -name *.css \\\\\\))"
+      "Bash(find /c/Users/russe/my-next-app/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json -o -name *.css \\\\\\))",
+      "mcp__mcp-registry__search_mcp_registry"
     ]
   }
 }
