@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, ImagePlus } from "lucide-react";
 import { ChatMessage } from "@/lib/types";
-import { currentUser } from "@/lib/data";
 
 interface ChatViewProps {
   messages: ChatMessage[];
   onSend: (text: string) => void;
+  currentUserId: string;
 }
 
-export default function ChatView({ messages, onSend }: ChatViewProps) {
+export default function ChatView({ messages, onSend, currentUserId }: ChatViewProps) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -41,36 +41,29 @@ export default function ChatView({ messages, onSend }: ChatViewProps) {
       .join("")
       .toUpperCase();
 
-  const avatarColors: Record<string, string> = {
-    "Mike Johnson": "bg-blue-500",
-    "Sarah Lee": "bg-purple-500",
-    "Carlos Rivera": "bg-emerald-500",
-  };
-
   return (
     <div className="flex flex-col h-[calc(100vh-7.5rem)]">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((msg) => {
-          const isMe = msg.sender === currentUser.name;
+          const isMe = msg.sender_id === currentUserId;
+          const senderName = msg.sender?.full_name ?? "Unknown";
           return (
             <div
               key={msg.id}
               className={`flex gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-                  avatarColors[msg.sender] || "bg-slate-500"
-                }`}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white bg-slate-500`}
               >
-                {getInitials(msg.sender)}
+                {getInitials(senderName)}
               </div>
               <div className={`max-w-[75%] ${isMe ? "items-end" : ""}`}>
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className={`text-xs font-semibold ${isMe ? "text-orange-600" : "text-slate-700"}`}>
-                    {isMe ? "You" : msg.sender}
+                    {isMe ? "You" : senderName}
                   </span>
-                  <span className="text-[10px] text-slate-400">{formatTime(msg.timestamp)}</span>
+                  <span className="text-[10px] text-slate-400">{formatTime(msg.created_at)}</span>
                 </div>
                 <div
                   className={`rounded-xl px-3 py-2 text-sm leading-relaxed ${

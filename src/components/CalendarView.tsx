@@ -22,10 +22,10 @@ interface CalendarViewProps {
   tasks: Task[];
   onAddTask: (task: {
     title: string;
-    assignedTo: string;
-    jobName: string;
-    dueDate: string;
+    job_name: string;
+    due_date: string;
     priority: "Low" | "Medium" | "High" | "Critical";
+    assigned_to: string | null;
   }) => void;
 }
 
@@ -37,7 +37,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
   const activeTasks = tasks.filter((t) => t.status === "active");
 
   const getTasksForDay = (day: Date) =>
-    activeTasks.filter((t) => isSameDay(new Date(t.dueDate + "T00:00:00"), day));
+    activeTasks.filter((t) => t.due_date && isSameDay(new Date(t.due_date + "T00:00:00"), day));
 
   const renderHeader = () => (
     <div className="flex items-center justify-between px-4 py-3">
@@ -168,7 +168,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
                   }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 truncate">{task.title}</p>
-                    <p className="text-xs text-slate-500">{task.assignedTo} · {task.jobName}</p>
+                    <p className="text-xs text-slate-500">{task.assignee?.full_name ?? "Unassigned"} · {task.job_name}</p>
                   </div>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     task.priority === "Critical" ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-500"
