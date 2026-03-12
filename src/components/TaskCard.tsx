@@ -31,16 +31,18 @@ export default function TaskCard({
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  const assigneeName = task.assignee?.full_name ?? "Unassigned";
+
   return (
     <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
       {/* Top row: badges + actions */}
       <div className="mb-2 flex items-start justify-between">
         <div className="flex flex-wrap gap-1.5">
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-            {task.assignedTo}
+            {assigneeName}
           </span>
           <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-600">
-            {task.jobName}
+            {task.job_name}
           </span>
         </div>
         <div className="flex items-center gap-1 ml-2 shrink-0">
@@ -66,17 +68,29 @@ export default function TaskCard({
       </div>
 
       {/* Title */}
-      <h3 className={`text-sm font-semibold mb-1.5 ${task.status === "completed" ? "line-through text-slate-400" : "text-slate-900"}`}>
+      <h3
+        className={`text-sm font-semibold mb-1.5 ${
+          task.status === "completed"
+            ? "line-through text-slate-400"
+            : "text-slate-900"
+        }`}
+      >
         {task.title}
       </h3>
 
       {/* Meta row */}
       <div className="flex items-center gap-3 mb-3 text-xs">
-        <span className="flex items-center gap-1 text-slate-500">
-          <CalendarDays className="h-3.5 w-3.5" />
-          {formatDate(task.dueDate)}
-        </span>
-        <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${priorityStyles[task.priority]}`}>
+        {task.due_date && (
+          <span className="flex items-center gap-1 text-slate-500">
+            <CalendarDays className="h-3.5 w-3.5" />
+            {formatDate(task.due_date)}
+          </span>
+        )}
+        <span
+          className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+            priorityStyles[task.priority]
+          }`}
+        >
           {task.priority === "Critical" && <AlertTriangle className="h-3 w-3" />}
           {task.priority}
         </span>
@@ -93,12 +107,15 @@ export default function TaskCard({
               {completedCount}/{task.checklist.length}
             </span>
           </div>
-          {/* Progress bar */}
           <div className="h-1 w-full rounded-full bg-slate-100 overflow-hidden mb-1">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all duration-300"
               style={{
-                width: `${task.checklist.length > 0 ? (completedCount / task.checklist.length) * 100 : 0}%`,
+                width: `${
+                  task.checklist.length > 0
+                    ? (completedCount / task.checklist.length) * 100
+                    : 0
+                }%`,
               }}
             />
           </div>

@@ -13,10 +13,10 @@ interface TasksViewProps {
   onToggleChecklist: (taskId: string, itemId: string) => void;
   onAddTask: (task: {
     title: string;
-    assignedTo: string;
-    jobName: string;
-    dueDate: string;
+    job_name: string;
+    due_date: string;
     priority: "Low" | "Medium" | "High" | "Critical";
+    assigned_to: string | null;
   }) => void;
   showAddModal: boolean;
   onCloseAddModal: () => void;
@@ -35,12 +35,14 @@ export default function TasksView({
   const [filter, setFilter] = useState<"active" | "completed">("active");
 
   const filtered = tasks.filter((t) => {
-    const matchesStatus = t.status === filter;
+    const matchesStatus = filter === "active"
+      ? t.status !== "completed"
+      : t.status === "completed";
     const matchesSearch =
       search === "" ||
       t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.assignedTo.toLowerCase().includes(search.toLowerCase()) ||
-      t.jobName.toLowerCase().includes(search.toLowerCase());
+      (t.assignee?.full_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      t.job_name.toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -101,7 +103,9 @@ export default function TasksView({
         )}
       </div>
 
-      {showAddModal && <AddTaskModal onClose={onCloseAddModal} onAdd={onAddTask} />}
+      {showAddModal && (
+        <AddTaskModal onClose={onCloseAddModal} onAdd={onAddTask} />
+      )}
     </div>
   );
 }

@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Play, Square, DollarSign, Briefcase, Clock } from "lucide-react";
 import { TimeEntry } from "@/lib/types";
-import { jobNames, currentUser } from "@/lib/data";
+
+const DEFAULT_JOB_NAMES = [
+  "Riverside Kitchen Remodel",
+  "Oak St. New Build",
+  "Henderson Backyard",
+];
 
 interface TimeClockViewProps {
   timeEntries: TimeEntry[];
@@ -16,18 +21,21 @@ export default function TimeClockView({
   onClockIn,
   onClockOut,
 }: TimeClockViewProps) {
-  const [selectedJob, setSelectedJob] = useState(jobNames[0]);
+  const [selectedJob, setSelectedJob] = useState(DEFAULT_JOB_NAMES[0]);
 
-  const activeShift = timeEntries.find((e) => e.clockOut === null);
+  const activeShift = timeEntries.find((e) => e.clock_out === null);
 
   const calcHours = (entry: TimeEntry): number => {
-    const start = new Date(entry.clockIn).getTime();
-    const end = entry.clockOut ? new Date(entry.clockOut).getTime() : Date.now();
+    const start = new Date(entry.clock_in).getTime();
+    const end = entry.clock_out ? new Date(entry.clock_out).getTime() : Date.now();
     return (end - start) / (1000 * 60 * 60);
   };
 
   const totalHours = timeEntries.reduce((sum, e) => sum + calcHours(e), 0);
-  const totalPay = totalHours * currentUser.hourlyRate;
+  const totalPay = timeEntries.reduce(
+    (sum, e) => sum + calcHours(e) * e.hourly_rate,
+    0
+  );
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -48,7 +56,7 @@ export default function TimeClockView({
 
         {activeShift && (
           <div className="mb-3 text-xs text-emerald-600">
-            <span className="font-medium">{activeShift.jobName}</span> — since {formatTime(activeShift.clockIn)}
+            <span className="font-medium">{activeShift.job_name}</span> — since {formatTime(activeShift.clock_in)}
           </div>
         )}
 
@@ -60,7 +68,7 @@ export default function TimeClockView({
               onChange={(e) => setSelectedJob(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
-              {jobNames.map((j) => (
+              {DEFAULT_JOB_NAMES.map((j) => (
                 <option key={j}>{j}</option>
               ))}
             </select>
@@ -128,10 +136,10 @@ export default function TimeClockView({
                     <Briefcase className="h-4 w-4 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{entry.jobName}</p>
+                    <p className="text-sm font-medium text-slate-900">{entry.job_name}</p>
                     <p className="text-xs text-slate-400">
-                      {formatDate(entry.clockIn)} · {formatTime(entry.clockIn)}
-                      {entry.clockOut ? ` – ${formatTime(entry.clockOut)}` : " – now"}
+                      {formatDate(entry.clock_in)} · {formatTime(entry.clock_in)}
+                      {entry.clock_out ? ` – ${formatTime(entry.clock_out)}` : " – now"}
                     </p>
                   </div>
                 </div>
@@ -140,7 +148,7 @@ export default function TimeClockView({
                     {calcHours(entry).toFixed(1)}h
                   </p>
                   <p className="text-xs text-emerald-600 font-medium">
-                    ${(calcHours(entry) * entry.hourlyRate).toFixed(2)}
+                    ${(calcHours(entry) * entry.hourly_rate).toFixed(2)}
                   </p>
                 </div>
               </div>
