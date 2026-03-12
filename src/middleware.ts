@@ -34,13 +34,13 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect all routes except /login and public assets
-  const isLoginPage = request.nextUrl.pathname === '/login'
+  // Protect all routes except /login, /signup and public assets
+  const isAuthPage = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup'
   const isPublicAsset = request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/api/') ||
     request.nextUrl.pathname.match(/\.(ico|png|jpg|jpeg|svg|webp|json|txt|xml)$/)
 
-  if (!user && !isLoginPage && !isPublicAsset) {
+  if (!user && !isAuthPage && !isPublicAsset) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

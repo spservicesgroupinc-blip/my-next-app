@@ -145,7 +145,7 @@ export default function Home() {
     // Tab from URL
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as TabId | null;
-    if (tab && ["tasks", "timeclock", "chat", "calendar"].includes(tab)) {
+    if (tab && ["tasks", "timeclock", "chat", "calendar", "admin"].includes(tab)) {
       setActiveTab(tab);
     }
 
