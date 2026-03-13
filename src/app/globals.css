@@ -90,6 +90,22 @@ button, a, nav {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer-pulse {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #ffffff 4%, #f1f5f9 25%, #ffffff 36%);
+  background-size: 1000px 100%;
+}
+
+
 /* Smooth touch scrolling */
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;

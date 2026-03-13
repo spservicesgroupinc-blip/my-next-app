@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   MapPin,
+  Activity,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
@@ -27,6 +28,22 @@ interface EmployeeWithStatus extends Profile {
   activeTasks: Task[];
   email?: string;
 }
+
+// ── Live Activity Item (Placeholder) ──────────────────────────────────────────
+function ActivityItem({ icon, text, time }: any) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        {icon}
+      </div>
+      <div className="flex-1 border-b border-slate-100 pb-3">
+        <p className="text-xs text-slate-700">{text}</p>
+        <p className="text-[10px] text-slate-400">{time}</p>
+      </div>
+    </div>
+  );
+}
+
 
 export default function AdminView() {
   const supabase = createClient();
@@ -283,164 +300,184 @@ export default function AdminView() {
   const notClocked = employees.filter((e) => e.activeShift === null && e.is_active);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex h-[calc(100vh-theme(spacing.16))] flex-col">
       {/* Admin tab toggle */}
-      <div className="flex rounded-lg bg-slate-100 p-0.5">
-        <button
-          onClick={() => setAdminTab("live")}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
-            adminTab === "live"
-              ? "bg-white text-orange-600 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <Clock className="h-3.5 w-3.5" />
-          Live View
-        </button>
-        <button
-          onClick={() => setAdminTab("employees")}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
-            adminTab === "employees"
-              ? "bg-white text-orange-600 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" />
-          Employees
-        </button>
-        <button
-          onClick={() => setAdminTab("jobs")}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
-            adminTab === "jobs"
-              ? "bg-white text-orange-600 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <Briefcase className="h-3.5 w-3.5" />
-          Jobs
-        </button>
-        <button
-          onClick={() => setAdminTab("map")}
-          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
-            adminTab === "map"
-              ? "bg-white text-orange-600 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          Map
-        </button>
+      <div className="flex-shrink-0 border-b border-slate-200 bg-white p-4">
+        <div className="flex rounded-lg bg-slate-100 p-0.5">
+          <button
+            onClick={() => setAdminTab("live")}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+              adminTab === "live"
+                ? "bg-white text-orange-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Live View
+          </button>
+          <button
+            onClick={() => setAdminTab("employees")}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+              adminTab === "employees"
+                ? "bg-white text-orange-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Employees
+          </button>
+          <button
+            onClick={() => setAdminTab("jobs")}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+              adminTab === "jobs"
+                ? "bg-white text-orange-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <Briefcase className="h-3.5 w-3.5" />
+            Jobs
+          </button>
+          <button
+            onClick={() => setAdminTab("map")}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+              adminTab === "map"
+                ? "bg-white text-orange-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            Map
+          </button>
+        </div>
       </div>
 
       {/* ── LIVE VIEW ───────────────────────────────────────────────────────── */}
       {adminTab === "live" && (
-        <div className="flex flex-col gap-3">
-          {/* Summary row */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
-              <p className="text-lg font-bold text-emerald-600">{clocked.length}</p>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Clocked In</p>
+        <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden p-4 md:grid-cols-2">
+          {/* Employee status column */}
+          <div className="flex flex-col gap-4 overflow-y-auto">
+            {/* Summary row */}
+            <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+              <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
+                <p className="text-lg font-bold text-emerald-600">{clocked.length}</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Clocked In</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
+                <p className="text-lg font-bold text-slate-700">{notClocked.length}</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Off / Away</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
+                <p className="text-lg font-bold text-orange-600">
+                  {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
+                </p>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Open Tasks</p>
+              </div>
             </div>
-            <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
-              <p className="text-lg font-bold text-slate-700">{notClocked.length}</p>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Off / Away</p>
+
+            <div className="flex items-center justify-between flex-shrink-0">
+              <h3 className="text-sm font-semibold text-slate-700">All Employees</h3>
+              <button
+                onClick={loadEmployees}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </button>
             </div>
-            <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
-              <p className="text-lg font-bold text-orange-600">
-                {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
-              </p>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Open Tasks</p>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700">All Employees</h3>
-            <button
-              onClick={loadEmployees}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
-            </button>
-          </div>
-
-          {isLoading ? (
-            <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {employees
-                .filter((e) => e.is_active)
-                .map((emp) => (
-                  <div
-                    key={emp.id}
-                    className={`rounded-xl p-3 border shadow-sm ${
-                      emp.activeShift
-                        ? "bg-emerald-50 border-emerald-200"
-                        : "bg-white border-slate-100"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            emp.activeShift
-                              ? "bg-emerald-500 animate-pulse"
-                              : "bg-slate-300"
-                          }`}
-                        />
-                        <span className="text-sm font-semibold text-slate-900">
-                          {emp.full_name || "Unnamed"}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          ${emp.hourly_rate}/hr
-                        </span>
-                      </div>
-                      {emp.activeShift && (
-                        <span className="text-xs font-medium text-emerald-600">
-                          {calcHours(emp.activeShift.clock_in)}h
-                        </span>
-                      )}
-                    </div>
-
-                    {emp.activeShift ? (
-                      <p className="text-xs text-emerald-700 ml-4">
-                        <span className="font-medium">{emp.activeShift.job_name}</span>
-                        {" "}· since {formatTime(emp.activeShift.clock_in)}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-slate-400 ml-4">Not clocked in</p>
-                    )}
-
-                    {emp.activeTasks.length > 0 && (
-                      <div className="mt-2 ml-4 flex flex-wrap gap-1">
-                        {emp.activeTasks.slice(0, 3).map((t) => (
-                          <span
-                            key={t.id}
-                            className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700"
-                          >
-                            <ClipboardList className="h-2.5 w-2.5" />
-                            {t.title.length > 24
-                              ? t.title.slice(0, 24) + "…"
-                              : t.title}
+            {isLoading ? (
+              <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {employees
+                  .filter((e) => e.is_active)
+                  .map((emp) => (
+                    <div
+                      key={emp.id}
+                      className={`rounded-xl p-3 border shadow-sm ${
+                        emp.activeShift
+                          ? "bg-emerald-50 border-emerald-200"
+                          : "bg-white border-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              emp.activeShift
+                                ? "bg-emerald-500 animate-pulse"
+                                : "bg-slate-300"
+                            }`}
+                          />
+                          <span className="text-sm font-semibold text-slate-900">
+                            {emp.full_name || "Unnamed"}
                           </span>
-                        ))}
-                        {emp.activeTasks.length > 3 && (
-                          <span className="text-[10px] text-slate-400">
-                            +{emp.activeTasks.length - 3} more
+                          <span className="text-xs text-slate-400">
+                            ${emp.hourly_rate}/hr
+                          </span>
+                        </div>
+                        {emp.activeShift && (
+                          <span className="text-xs font-medium text-emerald-600">
+                            {calcHours(emp.activeShift.clock_in)}h
                           </span>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {emp.activeShift ? (
+                        <p className="text-xs text-emerald-700 ml-4">
+                          <span className="font-medium">{emp.activeShift.job_name}</span>
+                          {" "}· since {formatTime(emp.activeShift.clock_in)}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-400 ml-4">Not clocked in</p>
+                      )}
+
+                      {emp.activeTasks.length > 0 && (
+                        <div className="mt-2 ml-4 flex flex-wrap gap-1">
+                          {emp.activeTasks.slice(0, 3).map((t) => (
+                            <span
+                              key={t.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700"
+                            >
+                              <ClipboardList className="h-2.5 w-2.5" />
+                              {t.title.length > 24
+                                ? t.title.slice(0, 24) + "…"
+                                : t.title}
+                            </span>
+                          ))}
+                          {emp.activeTasks.length > 3 && (
+                            <span className="text-[10px] text-slate-400">
+                              +{emp.activeTasks.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Activity feed column */}
+          <div className="flex flex-col gap-3 rounded-xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto">
+             <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Activity Feed
+            </h3>
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <Activity className="h-12 w-12 text-slate-200" />
+              <p className="mt-4 font-semibold text-slate-700">Real-time Activity</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Clock-ins, task updates, and messages will appear here.
+              </p>
             </div>
-          )}
+          </div>
         </div>
       )}
 
       {/* ── EMPLOYEES TAB ───────────────────────────────────────────────────── */}
       {adminTab === "employees" && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 p-4 overflow-y-auto">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-700">
               Team ({employees.length})
@@ -497,7 +534,7 @@ export default function AdminView() {
 
       {/* ── JOBS TAB ─────────────────────────────────────────────────────────── */}
       {adminTab === "jobs" && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 p-4 overflow-y-auto">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-700">
               Jobs ({jobs.filter((j) => j.is_active).length} active)

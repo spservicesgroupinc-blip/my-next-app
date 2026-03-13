@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Trash2, CalendarDays, AlertTriangle, Plus } from "lucide-react";
+import {
+  CheckCircle2,
+  Trash2,
+  CalendarDays,
+  AlertTriangle,
+  Plus,
+} from "lucide-react";
 import { Task, ChecklistItem } from "@/lib/types";
 
 interface TaskCardProps {
@@ -10,6 +16,7 @@ interface TaskCardProps {
   onDelete: (taskId: string) => void;
   onToggleChecklist: (taskId: string, itemId: string) => void;
   onAddLineItem: (taskId: string, text: string) => void;
+  onOpen: (task: Task) => void;
 }
 
 export default function TaskCard({
@@ -18,16 +25,24 @@ export default function TaskCard({
   onDelete,
   onToggleChecklist,
   onAddLineItem,
+  onOpen,
 }: TaskCardProps) {
   const [newItemText, setNewItemText] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const completedCount = task.checklist.filter((c) => c.completed).length;
 
-  const priorityStyles: Record<string, string> = {
+  const priorityTextStyles: Record<string, string> = {
     Low: "text-slate-500 bg-slate-100",
     Medium: "text-blue-600 bg-blue-100",
     High: "text-amber-500 bg-amber-100",
     Critical: "text-red-600 bg-red-100",
+  };
+
+  const priorityBorderStyles: Record<string, string> = {
+    Low: "border-l-slate-300",
+    Medium: "border-l-blue-500",
+    High: "border-l-amber-500",
+    Critical: "border-l-red-500",
   };
 
   const formatDate = (dateStr: string) => {
@@ -37,8 +52,21 @@ export default function TaskCard({
 
   const assigneeName = task.assignee?.full_name ?? "Unassigned";
 
+  const handleCardClick = () => {
+    onOpen(task);
+  };
+  
+  const inProgress = task.status === "in_progress";
+
   return (
-    <div className={`rounded-xl bg-white p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow duration-200${task.status === "completed" ? " opacity-75" : ""}`}>
+    <div
+      onClick={handleCardClick}
+      className={`relative rounded-xl bg-white p-4 shadow-sm border border-slate-100 transition-shadow duration-200 cursor-pointer hover:shadow-lg border-l-4 ${
+        priorityBorderStyles[task.priority]
+      } ${task.status === "completed" ? "opacity-60" : "hover:border-l-orange-500"}
+      ${inProgress ? "shimmer-pulse" : ""}
+      `}
+    >
       {/* Top row: badges + actions */}
       <div className="mb-2 flex items-start justify-between">
         <div className="flex flex-wrap gap-1.5">
@@ -51,19 +79,19 @@ export default function TaskCard({
         </div>
         <div className="flex items-center gap-1 ml-2 shrink-0">
           <button
-            onClick={() => onToggleComplete(task.id)}
-            className={`p-2.5 rounded-md transition-colors ${
+            onClick={(e) => { e.stopPropagation(); onToggleComplete(task.id); }}
+            className={`p-2.5 rounded-full transition-colors ${
               task.status === "completed"
-                ? "text-emerald-500 hover:text-emerald-600"
-                : "text-slate-300 hover:text-emerald-500"
+                ? "text-emerald-500 hover:text-emerald-600 bg-emerald-50"
+                : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"
             }`}
             title={task.status === "completed" ? "Mark active" : "Mark complete"}
           >
-            <CheckCircle2 className="h-6 w-6" />
+            <CheckCircle2 className="h-5 w-5" />
           </button>
           <button
-            onClick={() => onDelete(task.id)}
-            className="p-2 rounded-md text-slate-300 hover:text-red-500 transition-colors"
+            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+            className="p-2 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
             title="Delete task"
           >
             <Trash2 className="h-4 w-4" />
@@ -73,7 +101,7 @@ export default function TaskCard({
 
       {/* Title */}
       <h3
-        className={`text-base font-semibold mb-1.5 ${
+        className={`text-base font-semibold mb-1.5 pr-12 ${
           task.status === "completed"
             ? "line-through text-slate-400"
             : "text-slate-900"
@@ -92,7 +120,7 @@ export default function TaskCard({
         )}
         <span
           className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-            priorityStyles[task.priority]
+            priorityTextStyles[task.priority]
           }`}
         >
           {task.priority === "Critical" && <AlertTriangle className="h-3 w-3" />}
@@ -127,6 +155,7 @@ export default function TaskCard({
             {task.checklist.map((item: ChecklistItem) => (
               <label
                 key={item.id}
+                onClick={(e) => e.stopPropagation()}
                 className="flex items-center gap-2 cursor-pointer group py-1"
               >
                 <input
@@ -151,7 +180,7 @@ export default function TaskCard({
 
         {/* Add line item */}
         {showAddItem ? (
-          <div className="flex gap-1.5 mt-1">
+          <div onClick={(e) => e.stopPropagation()} className="flex gap-1.5 mt-1">
             <input
               type="text"
               value={newItemText}
@@ -191,7 +220,7 @@ export default function TaskCard({
           </div>
         ) : (
           <button
-            onClick={() => setShowAddItem(true)}
+            onClick={(e) => { e.stopPropagation(); setShowAddItem(true); }}
             className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors mt-1 py-2 px-1"
           >
             <Plus className="h-3 w-3" />
