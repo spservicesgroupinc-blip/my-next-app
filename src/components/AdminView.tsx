@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Users,
   Clock,
@@ -16,6 +16,8 @@ import {
   Trash2,
   MapPin,
   Activity,
+  UserCheck,
+  CircleDot,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
@@ -29,18 +31,36 @@ interface EmployeeWithStatus extends Profile {
   email?: string;
 }
 
-// ── Live Activity Item (Placeholder) ──────────────────────────────────────────
-function ActivityItem({ icon, text, time }: any) {
+interface ActivityEvent {
+  id: string;
+  type: "clock_in" | "clock_out" | "task_insert" | "task_update" | "task_delete" | "message";
+  employeeName: string;
+  taskTitle?: string;
+  jobName?: string;
+  timestamp: string;
+}
+
+// ── Progress Ring Component ───────────────────────────────────────────────────
+function ProgressRing({ pct, size = 48 }: { pct: number; size?: number }) {
+  const r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct);
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-        {icon}
-      </div>
-      <div className="flex-1 border-b border-slate-100 pb-3">
-        <p className="text-xs text-slate-700">{text}</p>
-        <p className="text-[10px] text-slate-400">{time}</p>
-      </div>
-    </div>
+    <svg width={size} height={size} className="shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth="4" />
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={pct === 1 ? "#10b981" : "#f97316"} strokeWidth="4"
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: "stroke-dashoffset 0.4s ease" }}
+      />
+      <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize="10" fontWeight="600"
+        fill={pct === 1 ? "#10b981" : "#64748b"}>
+        {Math.round(pct * 100)}%
+      </text>
+    </svg>
   );
 }
 
@@ -50,6 +70,11 @@ export default function AdminView() {
   const [adminTab, setAdminTab] = useState<AdminTab>("live");
   const [employees, setEmployees] = useState<EmployeeWithStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // ── Activity feed state ───────────────────────────────────────────────────
+  const [activityFeed, setActivityFeed] = useState<ActivityEvent[]>([]);
+  const elapsedTimes = useRef<Record<string, string>>({});
+  const [, setTick] = useState(0);
 
   // ── Add Employee modal state ─────────────────────────────────────────────
   const [showAddEmployee, setShowAddEmployee] = useState(false);
@@ -129,18 +154,74 @@ export default function AdminView() {
     loadEmails();
     loadJobs();
 
+    // Tick every second to update elapsed times
+    const tickInterval = setInterval(() => setTick((t) => t + 1), 1000);
+
     // Real-time: refresh when time_entries change
     const sub = supabase
       .channel("admin-live")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "time_entries" },
-        () => loadEmployees()
+        { event: "INSERT", schema: "public", table: "time_entries" },
+        async (payload) => {
+          loadEmployees();
+          // Add to activity feed
+          const emp = employees.find((e) => e.id === (payload.new as any).user_id);
+          setActivityFeed((prev) => [
+            {
+              id: crypto.randomUUID(),
+              type: "clock_in",
+              employeeName: emp?.full_name ?? "Unknown",
+              jobName: (payload.new as any).job_name,
+              timestamp: new Date().toISOString(),
+            },
+            ...prev.slice(0, 49),
+          ]);
+        }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        () => loadEmployees()
+        { event: "DELETE", schema: "public", table: "time_entries" },
+        () => {
+          loadEmployees();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "tasks" },
+        async (payload) => {
+          loadEmployees();
+          const emp = employees.find((e) => e.id === (payload.new as any).created_by);
+          setActivityFeed((prev) => [
+            {
+              id: crypto.randomUUID(),
+              type: "task_insert",
+              employeeName: emp?.full_name ?? "Unknown",
+              taskTitle: (payload.new as any).title,
+              jobName: (payload.new as any).job_name,
+              timestamp: new Date().toISOString(),
+            },
+            ...prev.slice(0, 49),
+          ]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "tasks" },
+        async (payload) => {
+          loadEmployees();
+          const emp = employees.find((e) => e.id === (payload.new as any).updated_by);
+          setActivityFeed((prev) => [
+            {
+              id: crypto.randomUUID(),
+              type: "task_update",
+              employeeName: emp?.full_name ?? "Unknown",
+              taskTitle: (payload.new as any).title,
+              timestamp: new Date().toISOString(),
+            },
+            ...prev.slice(0, 49),
+          ]);
+        }
       )
       .on(
         "postgres_changes",
@@ -149,8 +230,11 @@ export default function AdminView() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(sub); };
-  }, [loadEmployees, loadEmails, loadJobs, supabase]);
+    return () => {
+      supabase.removeChannel(sub);
+      clearInterval(tickInterval);
+    };
+  }, [loadEmployees, loadEmails, loadJobs, supabase, employees]);
 
   // ── Invite new employee ───────────────────────────────────────────────────
   async function handleAddEmployee(e: React.FormEvent) {
