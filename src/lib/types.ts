@@ -55,5 +55,13 @@ export interface ChatMessage {
   sender?: Pick<Profile, "id" | "full_name">;
 }
 
+// ─── Job (matches public.jobs) ────────────────────────────────────────────────
+export interface Job {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 // ─── UI ───────────────────────────────────────────────────────────────────────
 export type TabId = "tasks" | "timeclock" | "chat" | "calendar" | "admin";

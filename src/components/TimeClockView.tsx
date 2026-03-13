@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Play, Square, DollarSign, Briefcase, Clock } from "lucide-react";
 import { TimeEntry } from "@/lib/types";
-
-const DEFAULT_JOB_NAMES = [
-  "Riverside Kitchen Remodel",
-  "Oak St. New Build",
-  "Henderson Backyard",
-];
+import { createClient } from "@/lib/supabase/client";
 
 interface TimeClockViewProps {
   timeEntries: TimeEntry[];
@@ -21,7 +16,22 @@ export default function TimeClockView({
   onClockIn,
   onClockOut,
 }: TimeClockViewProps) {
-  const [selectedJob, setSelectedJob] = useState(DEFAULT_JOB_NAMES[0]);
+  const supabase = createClient();
+  const [jobNames, setJobNames] = useState<string[]>([]);
+  const [selectedJob, setSelectedJob] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("jobs")
+      .select("name")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }) => {
+        const names = (data ?? []).map((j: { name: string }) => j.name);
+        setJobNames(names);
+        if (names.length > 0) setSelectedJob(names[0]);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeShift = timeEntries.find((e) => e.clock_out === null);
 
@@ -68,9 +78,13 @@ export default function TimeClockView({
               onChange={(e) => setSelectedJob(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
-              {DEFAULT_JOB_NAMES.map((j) => (
-                <option key={j}>{j}</option>
-              ))}
+              {jobNames.length === 0 ? (
+                <option value="">No jobs available</option>
+              ) : (
+                jobNames.map((j) => (
+                  <option key={j} value={j}>{j}</option>
+                ))
+              )}
             </select>
           </div>
         )}

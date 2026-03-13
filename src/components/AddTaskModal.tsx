@@ -20,6 +20,7 @@ interface AddTaskModalProps {
 export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskModalProps) {
   const supabase = createClient();
   const [employees, setEmployees] = useState<Pick<Profile, "id" | "full_name">[]>([]);
+  const [jobNames, setJobNames] = useState<string[]>([]);
 
   const [title, setTitle] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>("");
@@ -28,14 +29,23 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
   const [priority, setPriority] = useState<"Low" | "Medium" | "High" | "Critical">("Medium");
 
   useEffect(() => {
-    supabase
-      .from("profiles")
-      .select("id, full_name")
-      .eq("is_active", true)
-      .order("full_name")
-      .then(({ data }) => {
-        if (data) setEmployees(data);
-      });
+    Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("is_active", true)
+        .order("full_name"),
+      supabase
+        .from("jobs")
+        .select("name")
+        .eq("is_active", true)
+        .order("name"),
+    ]).then(([profilesRes, jobsRes]) => {
+      if (profilesRes.data) setEmployees(profilesRes.data);
+      const names = (jobsRes.data ?? []).map((j: { name: string }) => j.name);
+      setJobNames(names);
+      if (names.length > 0 && !jobName) setJobName(names[0]);
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -104,14 +114,17 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
             <label className="block text-xs font-medium text-slate-600 mb-1">
               Job / Project
             </label>
-            <input
-              type="text"
+            <select
               value={jobName}
               onChange={(e) => setJobName(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              placeholder="e.g. Riverside Kitchen Remodel"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               required
-            />
+            >
+              <option value="">— Select a Job —</option>
+              {jobNames.map((j) => (
+                <option key={j} value={j}>{j}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
