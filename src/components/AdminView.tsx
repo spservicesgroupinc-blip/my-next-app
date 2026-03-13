@@ -23,6 +23,7 @@ type AdminTab = "live" | "employees" | "jobs";
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
   activeTasks: Task[];
+  email?: string;
 }
 
 export default function AdminView() {
@@ -47,6 +48,9 @@ export default function AdminView() {
   const [editRole, setEditRole] = useState<"admin" | "employee">("employee");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+
+  // ── Employee email map ────────────────────────────────────────────────────
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
 
   // ── Jobs state ────────────────────────────────────────────────────────────
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -83,6 +87,14 @@ export default function AdminView() {
     setIsLoading(false);
   }, [supabase]);
 
+  const loadEmails = useCallback(async () => {
+    const res = await fetch("/api/admin/employees");
+    if (res.ok) {
+      const json = await res.json();
+      setEmailMap(json.emailMap ?? {});
+    }
+  }, []);
+
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
     const { data } = await supabase
@@ -95,6 +107,7 @@ export default function AdminView() {
 
   useEffect(() => {
     loadEmployees();
+    loadEmails();
     loadJobs();
 
     // Real-time: refresh when time_entries change
@@ -118,7 +131,7 @@ export default function AdminView() {
       .subscribe();
 
     return () => { supabase.removeChannel(sub); };
-  }, [loadEmployees, loadJobs, supabase]);
+  }, [loadEmployees, loadEmails, loadJobs, supabase]);
 
   // ── Invite new employee ───────────────────────────────────────────────────
   async function handleAddEmployee(e: React.FormEvent) {
@@ -452,6 +465,11 @@ export default function AdminView() {
                       </span>
                     )}
                   </p>
+                  {emailMap[emp.id] && (
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {emailMap[emp.id]}
+                    </p>
+                  )}
                   <p className="text-xs text-slate-400 mt-0.5">
                     ${emp.hourly_rate}/hr · {emp.activeTasks.length} open task
                     {emp.activeTasks.length !== 1 ? "s" : ""}
@@ -661,6 +679,13 @@ export default function AdminView() {
             {editError && (
               <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                 {editError}
+              </div>
+            )}
+
+            {emailMap[editEmployee.id] && (
+              <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                <p className="text-xs font-medium text-slate-500 mb-0.5">Login Email</p>
+                <p className="text-sm text-slate-900">{emailMap[editEmployee.id]}</p>
               </div>
             )}
 
