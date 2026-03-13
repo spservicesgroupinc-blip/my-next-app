@@ -30,6 +30,7 @@ function HomeInner() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(true);
   const [dataLoading, setDataLoading] = useState(true);
+  const [dataErrors, setDataErrors] = useState<{ tasks?: string; timeEntries?: string; chat?: string }>({});
 
   const isOnline = useOnlineStatus();
   useServiceWorker();
@@ -56,6 +57,7 @@ function HomeInner() {
 
     async function loadData() {
       setDataLoading(true);
+      setDataErrors({});
 
       const [tasksRes, entriesRes, messagesRes] = await Promise.all([
         supabase
@@ -72,14 +74,30 @@ function HomeInner() {
           .order("created_at", { ascending: true }),
       ]);
 
-      if (tasksRes.error) console.error("Failed to load tasks:", tasksRes.error.message);
-      if (entriesRes.error) console.error("Failed to load time entries:", entriesRes.error.message);
-      if (messagesRes.error) console.error("Failed to load messages:", messagesRes.error.message);
+      const errors: typeof dataErrors = {};
+      
+      if (tasksRes.error) {
+        console.error("Failed to load tasks:", tasksRes.error.message);
+        errors.tasks = tasksRes.error.message;
+      } else if (tasksRes.data) {
+        setTasks(tasksRes.data as Task[]);
+      }
 
-      if (tasksRes.data) setTasks(tasksRes.data as Task[]);
-      if (entriesRes.data) setTimeEntries(entriesRes.data as TimeEntry[]);
-      if (messagesRes.data) setChatMessages(messagesRes.data as ChatMessage[]);
+      if (entriesRes.error) {
+        console.error("Failed to load time entries:", entriesRes.error.message);
+        errors.timeEntries = entriesRes.error.message;
+      } else if (entriesRes.data) {
+        setTimeEntries(entriesRes.data as TimeEntry[]);
+      }
 
+      if (messagesRes.error) {
+        console.error("Failed to load messages:", messagesRes.error.message);
+        errors.chat = messagesRes.error.message;
+      } else if (messagesRes.data) {
+        setChatMessages(messagesRes.data as ChatMessage[]);
+      }
+
+      setDataErrors(errors);
       setDataLoading(false);
     }
 
@@ -169,6 +187,15 @@ function HomeInner() {
       supabase.removeChannel(taskSub);
     };
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Retry data loading
+  const retryDataLoad = useCallback(() => {
+    setDataLoading(true);
+    setTimeout(() => {
+      // Trigger re-fetch by letting the effect run again
+      window.location.reload();
+    }, 100);
+  }, []);
 
   // ── Task handlers ────────────────────────────────────────────────────────────
 
@@ -388,7 +415,7 @@ function HomeInner() {
 
   // ── Loading ──────────────────────────────────────────────────────────────────
 
-  if (authLoading || dataLoading) {
+  if (authLoading) {
     return (
       <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
@@ -413,6 +440,34 @@ function HomeInner() {
     );
   }
 
+  // Show data error state if all data failed to load
+  const allDataFailed = dataErrors.tasks && dataErrors.timeEntries && dataErrors.chat;
+  const someDataFailed = Object.keys(dataErrors).length > 0;
+
+  if (allDataFailed && !dataLoading) {
+    return (
+      <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-slate-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 mx-auto mb-4">
+            <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Failed to Load Data</h2>
+          <p className="text-sm text-slate-600 mb-4">
+            We couldn&apos;t connect to the database. Please check your connection and try again.
+          </p>
+          <button
+            onClick={retryDataLoad}
+            className="w-full rounded-xl bg-orange-600 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const userInitials = profile?.full_name
     ? profile.full_name
         .split(" ")
@@ -425,6 +480,23 @@ function HomeInner() {
   return (
     <div className="flex h-screen h-[100dvh] flex-col bg-slate-50">
       {!isOnline && <OfflineBanner />}
+
+      {/* Data error banner for partial failures */}
+      {someDataFailed && !allDataFailed && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
+          <div className="flex items-center gap-2 text-amber-800">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-xs font-medium">
+              Some data failed to load.{" "}
+              <button onClick={retryDataLoad} className="underline hover:no-underline">
+                Retry
+              </button>
+            </span>
+          </div>
+        </div>
+      )}
 
       <Header
         activeTab={activeTab}
