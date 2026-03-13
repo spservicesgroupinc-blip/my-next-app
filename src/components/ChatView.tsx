@@ -71,7 +71,7 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7.5rem)]">
+    <div className="flex h-full flex-col">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (

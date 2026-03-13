@@ -392,7 +392,7 @@ export default function AdminView() {
   const notClocked = employees.filter((e) => e.activeShift === null && e.is_active);
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.16))] flex-col">
+    <div className="flex h-full flex-col">
       {/* Admin tab toggle */}
       <div className="flex-shrink-0 border-b border-slate-200 bg-white p-4">
         <div className="flex rounded-lg bg-slate-100 p-0.5">
@@ -445,7 +445,7 @@ export default function AdminView() {
 
       {/* ── LIVE VIEW ───────────────────────────────────────────────────────── */}
       {adminTab === "live" && (
-        <div className="flex flex-col gap-4 overflow-hidden p-4 h-full">
+        <div className="flex flex-col gap-4 overflow-hidden p-4 flex-1 min-h-0">
           {/* Summary row - 4 stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
             <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">

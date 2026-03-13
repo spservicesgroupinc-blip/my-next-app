@@ -91,7 +91,7 @@ export default function TasksView({
   };
 
   return (
-    <div className="flex h-full flex-col bg-slate-50">
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-slate-200 bg-white p-4">
         <div className="relative">

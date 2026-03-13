@@ -91,7 +91,7 @@ export default function TimeClockView({
     new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       {/* Status Card */}
       <div className={`rounded-xl p-5 shadow-sm ${activeShift ? "bg-emerald-50 border border-emerald-200" : "bg-white border border-slate-100"}`}>
         <div className="flex items-center gap-2 mb-3">

@@ -423,7 +423,7 @@ function HomeInner() {
     : "?";
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh] flex-col bg-slate-50">
+    <div className="flex h-screen h-[100dvh] flex-col bg-slate-50">
       {!isOnline && <OfflineBanner />}
 
       <Header
@@ -431,7 +431,7 @@ function HomeInner() {
         userInitials={userInitials}
       />
 
-      <main className="flex-1 overflow-y-auto pb-20">
+      <main className="flex-1 overflow-y-auto">
         {activeTab === "tasks" && (
           <TasksView
             tasks={tasks}
