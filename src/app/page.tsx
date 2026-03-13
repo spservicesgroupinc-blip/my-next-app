@@ -11,7 +11,7 @@ import CalendarView from "@/components/CalendarView";
 import AdminView from "@/components/AdminView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
-import { TabId, Task, TimeEntry, ChatMessage } from "@/lib/types";
+import { TabId, Task, TimeEntry, ChatMessage, ChecklistItem } from "@/lib/types";
 import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
@@ -221,6 +221,34 @@ export default function Home() {
     [supabase]
   );
 
+  const handleAddLineItem = useCallback(
+    async (taskId: string, text: string) => {
+      const newItem: ChecklistItem = {
+        id: crypto.randomUUID(),
+        text,
+        completed: false,
+      };
+      setTasks((prev) => {
+        const updated = prev.map((t) => {
+          if (t.id !== taskId) return t;
+          return { ...t, checklist: [...t.checklist, newItem] };
+        });
+        const updatedTask = updated.find((t) => t.id === taskId);
+        if (updatedTask) {
+          supabase
+            .from("tasks")
+            .update({
+              checklist: updatedTask.checklist,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", taskId);
+        }
+        return updated;
+      });
+    },
+    [supabase]
+  );
+
   const handleAddTask = useCallback(
     async (task: {
       title: string;
@@ -228,14 +256,19 @@ export default function Home() {
       due_date: string;
       priority: "Low" | "Medium" | "High" | "Critical";
       assigned_to: string | null;
+      checklist?: ChecklistItem[];
     }) => {
       if (!user) return;
       const { data, error } = await supabase
         .from("tasks")
         .insert({
-          ...task,
+          title: task.title,
+          job_name: task.job_name,
+          due_date: task.due_date,
+          priority: task.priority,
+          assigned_to: task.assigned_to,
           status: "active",
-          checklist: [],
+          checklist: task.checklist || [],
           created_by: user.id,
           company_id: profile!.company_id,
         })
@@ -368,7 +401,6 @@ export default function Home() {
 
       <Header
         activeTab={activeTab}
-        onAddTask={() => setShowAddModal(true)}
         userInitials={userInitials}
       />
 
@@ -379,6 +411,7 @@ export default function Home() {
             onToggleComplete={handleToggleComplete}
             onDelete={handleDeleteTask}
             onToggleChecklist={handleToggleChecklist}
+            onAddLineItem={handleAddLineItem}
             onAddTask={handleAddTask}
             showAddModal={showAddModal}
             onCloseAddModal={() => setShowAddModal(false)}
@@ -404,7 +437,7 @@ export default function Home() {
         {activeTab === "admin" && isAdmin && <AdminView />}
       </main>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddTask={() => setShowAddModal(true)} isAdmin={isAdmin} />
 
       {canInstall && !installDismissed && (
         <InstallBanner onInstall={handleInstall} onDismiss={handleDismissInstall} />

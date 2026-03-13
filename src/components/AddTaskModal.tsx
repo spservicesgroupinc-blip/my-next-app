@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Profile } from "@/lib/types";
+import { Profile, ChecklistItem } from "@/lib/types";
 
 interface AddTaskModalProps {
   onClose: () => void;
@@ -13,6 +13,7 @@ interface AddTaskModalProps {
     due_date: string;
     priority: "Low" | "Medium" | "High" | "Critical";
     assigned_to: string | null;
+    checklist: ChecklistItem[];
   }) => void;
   initialDate?: string;
 }
@@ -27,6 +28,11 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
   const [jobName, setJobName] = useState("");
   const [dueDate, setDueDate] = useState(initialDate || "");
   const [priority, setPriority] = useState<"Low" | "Medium" | "High" | "Critical">("Medium");
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Line items (checklist)
+  const [lineItems, setLineItems] = useState<ChecklistItem[]>([]);
+  const [newLineItem, setNewLineItem] = useState("");
 
   // Inline add-new states
   const [showNewJob, setShowNewJob] = useState(false);
@@ -114,26 +120,40 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
     setAddingEmployee(false);
   }
 
+  const addLineItem = () => {
+    if (!newLineItem.trim()) return;
+    setLineItems((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), text: newLineItem.trim(), completed: false },
+    ]);
+    setNewLineItem("");
+  };
+
+  const removeLineItem = (id: string) => {
+    setLineItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !jobName.trim() || !dueDate) return;
+    if (!title.trim()) return;
     onAdd({
       title: title.trim(),
-      job_name: jobName.trim(),
-      due_date: dueDate,
+      job_name: jobName.trim() || "General",
+      due_date: dueDate || new Date().toISOString().split("T")[0],
       priority,
       assigned_to: assignedTo || null,
+      checklist: lineItems,
     });
     onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 animate-[slideUp_0.3s_ease-out]"
+        className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-5 pb-8 animate-[slideUp_0.3s_ease-out] max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -144,19 +164,81 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Task Title - REQUIRED */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
-              Task Title
+              Task Name
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="e.g. Install kitchen cabinets"
+              autoFocus
               required
             />
           </div>
+
+          {/* Line Items / Checklist */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">
+              Line Items
+            </label>
+            {lineItems.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {lineItems.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 group">
+                    <div className="h-4 w-4 rounded border border-slate-300 shrink-0" />
+                    <span className="flex-1 text-sm text-slate-700 truncate">{item.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeLineItem(item.id)}
+                      className="p-0.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newLineItem}
+                onChange={(e) => setNewLineItem(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addLineItem();
+                  }
+                }}
+                className="flex-1 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                placeholder="Add a line item..."
+              />
+              <button
+                type="button"
+                onClick={addLineItem}
+                disabled={!newLineItem.trim()}
+                className="flex items-center justify-center h-[38px] w-[38px] shrink-0 rounded-lg bg-slate-100 text-slate-500 hover:bg-orange-100 hover:text-orange-600 disabled:opacity-30 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Optional Details Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600 transition-colors w-full"
+          >
+            {showDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {showDetails ? "Hide details" : "Add details (optional)"}
+          </button>
+
+          {showDetails && (<>
+          {/* Assign To */}
 
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
@@ -256,9 +338,8 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                 }
               }}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              required={!showNewJob}
             >
-              <option value="">— Select a Job —</option>
+              <option value="">— Select a Job (optional) —</option>
               {jobNames.map((j) => (
                 <option key={j} value={j}>{j}</option>
               ))}
@@ -321,16 +402,17 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                required
               />
             </div>
           </div>
+          </>)}
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 active:scale-[0.98]"
+            disabled={!title.trim()}
+            className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Add Task
+            Create Task
           </button>
         </form>
       </div>

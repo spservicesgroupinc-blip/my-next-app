@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CheckSquare, Bell, Plus, LogOut, ChevronDown } from "lucide-react";
+import { CheckSquare, Bell, LogOut, ChevronDown } from "lucide-react";
 import { TabId } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   activeTab: TabId;
-  onAddTask: () => void;
   userInitials: string;
 }
 
-export default function Header({ activeTab, onAddTask, userInitials }: HeaderProps) {
+export default function Header({ activeTab, userInitials }: HeaderProps) {
   const { profile, isAdmin, signOut } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -27,14 +26,6 @@ export default function Header({ activeTab, onAddTask, userInitials }: HeaderPro
       </div>
 
       <div className="flex items-center gap-3">
-        {activeTab === "tasks" && (
-          <button
-            onClick={onAddTask}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-white shadow-md transition-transform active:scale-95"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        )}
         <button className="relative p-1 text-slate-500 hover:text-slate-700">
           <Bell className="h-5 w-5" />
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-orange-600" />

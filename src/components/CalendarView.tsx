@@ -15,7 +15,7 @@ import {
   isToday,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, X, Plus } from "lucide-react";
-import { Task } from "@/lib/types";
+import { Task, ChecklistItem } from "@/lib/types";
 import AddTaskModal from "./AddTaskModal";
 
 interface CalendarViewProps {
@@ -26,6 +26,7 @@ interface CalendarViewProps {
     due_date: string;
     priority: "Low" | "Medium" | "High" | "Critical";
     assigned_to: string | null;
+    checklist?: ChecklistItem[];
   }) => void;
 }
 
