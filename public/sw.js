@@ -139,3 +139,8 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Notification close handler
+self.addEventListener('notificationclose', () => {
+  // Notification dismissed without clicking
+});

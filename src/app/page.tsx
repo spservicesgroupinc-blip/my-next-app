@@ -28,7 +28,7 @@ function HomeInner() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeTab, setActiveTab] = useState<TabId>("tasks");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [installDismissed, setInstallDismissed] = useState(true);
+  const [installDismissed, setInstallDismissed] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataErrors, setDataErrors] = useState<{ tasks?: string; timeEntries?: string; chat?: string }>({});
 

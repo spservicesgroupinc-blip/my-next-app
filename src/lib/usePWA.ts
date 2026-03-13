@@ -8,20 +8,21 @@ export function useServiceWorker() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
+    let interval: ReturnType<typeof setInterval>;
+
     navigator.serviceWorker
       .register("/sw.js")
       .then((reg) => {
         registrationRef.current = reg;
-
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
           reg.update();
         }, 60 * 60 * 1000);
-
-        return () => clearInterval(interval);
       })
       .catch((err) => {
         console.error("SW registration failed:", err);
       });
+
+    return () => clearInterval(interval);
   }, []);
 
   return registrationRef;
