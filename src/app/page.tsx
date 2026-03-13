@@ -15,6 +15,7 @@ import { TabId, Task, TimeEntry, ChatMessage } from "@/lib/types";
 import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { useLocationTracking } from "@/lib/useLocationTracking";
 
 export default function Home() {
   const router = useRouter();
@@ -32,6 +33,12 @@ export default function Home() {
   const isOnline = useOnlineStatus();
   useServiceWorker();
   const { canInstall, install } = useInstallPrompt();
+
+  // Track employee GPS location when clocked in
+  const isClockedIn = timeEntries.some(
+    (e) => e.user_id === user?.id && !e.clock_out
+  );
+  useLocationTracking(isClockedIn);
 
   // Redirect if not authenticated
   useEffect(() => {

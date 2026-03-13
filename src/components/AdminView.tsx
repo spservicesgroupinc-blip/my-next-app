@@ -14,11 +14,13 @@ import {
   Briefcase,
   Plus,
   Trash2,
+  MapPin,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
+import LiveMapView from "@/components/LiveMapView";
 
-type AdminTab = "live" | "employees" | "jobs";
+type AdminTab = "live" | "employees" | "jobs" | "map";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
@@ -317,6 +319,17 @@ export default function AdminView() {
           <Briefcase className="h-3.5 w-3.5" />
           Jobs
         </button>
+        <button
+          onClick={() => setAdminTab("map")}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            adminTab === "map"
+              ? "bg-white text-orange-600 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          Map
+        </button>
       </div>
 
       {/* ── LIVE VIEW ───────────────────────────────────────────────────────── */}
@@ -560,6 +573,9 @@ export default function AdminView() {
           )}
         </div>
       )}
+
+      {/* ── MAP VIEW ────────────────────────────────────────────────────────── */}
+      {adminTab === "map" && <LiveMapView />}
 
       {/* ── ADD EMPLOYEE MODAL ───────────────────────────────────────────────── */}
       {showAddEmployee && (

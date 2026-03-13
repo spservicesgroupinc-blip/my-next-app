@@ -67,5 +67,15 @@ export interface Job {
   created_at: string;
 }
 
+// ─── EmployeeLocation (matches public.employee_locations) ─────────────────────
+export interface EmployeeLocation {
+  id: string;
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+  updated_at: string;
+}
+
 // ─── UI ───────────────────────────────────────────────────────────────────────
 export type TabId = "tasks" | "timeclock" | "chat" | "calendar" | "admin";
