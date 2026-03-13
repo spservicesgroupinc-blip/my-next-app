@@ -11,15 +11,21 @@ import {
   X,
   Save,
   RefreshCw,
+  Briefcase,
+  Plus,
+  Trash2,
+  MapPin,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Profile, Task, TimeEntry } from "@/lib/types";
+import { Profile, Task, TimeEntry, Job } from "@/lib/types";
+import LiveMapView from "@/components/LiveMapView";
 
-type AdminTab = "live" | "employees";
+type AdminTab = "live" | "employees" | "jobs" | "map";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
   activeTasks: Task[];
+  email?: string;
 }
 
 export default function AdminView() {
@@ -32,13 +38,27 @@ export default function AdminView() {
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [newRate, setNewRate] = useState("0");
   const [addError, setAddError] = useState<string | null>(null);
   const [addLoading, setAddLoading] = useState(false);
 
-  // ── Edit rate state ───────────────────────────────────────────────────────
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // ── Edit Employee modal state ─────────────────────────────────────────────
+  const [editEmployee, setEditEmployee] = useState<EmployeeWithStatus | null>(null);
+  const [editName, setEditName] = useState("");
   const [editRate, setEditRate] = useState("");
+  const [editRole, setEditRole] = useState<"admin" | "employee">("employee");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // ── Employee email map ────────────────────────────────────────────────────
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
+
+  // ── Jobs state ────────────────────────────────────────────────────────────
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [newJobName, setNewJobName] = useState("");
+  const [addingJob, setAddingJob] = useState(false);
 
   const loadEmployees = useCallback(async () => {
     setIsLoading(true);
@@ -69,8 +89,28 @@ export default function AdminView() {
     setIsLoading(false);
   }, [supabase]);
 
+  const loadEmails = useCallback(async () => {
+    const res = await fetch("/api/admin/employees");
+    if (res.ok) {
+      const json = await res.json();
+      setEmailMap(json.emailMap ?? {});
+    }
+  }, []);
+
+  const loadJobs = useCallback(async () => {
+    setJobsLoading(true);
+    const { data } = await supabase
+      .from("jobs")
+      .select("*")
+      .order("name");
+    setJobs(data ?? []);
+    setJobsLoading(false);
+  }, [supabase]);
+
   useEffect(() => {
     loadEmployees();
+    loadEmails();
+    loadJobs();
 
     // Real-time: refresh when time_entries change
     const sub = supabase
@@ -85,10 +125,15 @@ export default function AdminView() {
         { event: "*", schema: "public", table: "tasks" },
         () => loadEmployees()
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "jobs" },
+        () => loadJobs()
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(sub); };
-  }, [loadEmployees, supabase]);
+  }, [loadEmployees, loadEmails, loadJobs, supabase]);
 
   // ── Invite new employee ───────────────────────────────────────────────────
   async function handleAddEmployee(e: React.FormEvent) {
@@ -96,12 +141,12 @@ export default function AdminView() {
     setAddLoading(true);
     setAddError(null);
 
-    // Use Supabase admin invite (requires service role — we use a Next.js API route)
     const res = await fetch("/api/admin/invite-employee", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: newEmail.trim(),
+        password: newPassword,
         full_name: newName.trim(),
         hourly_rate: parseFloat(newRate) || 0,
       }),
@@ -118,25 +163,60 @@ export default function AdminView() {
     setShowAddEmployee(false);
     setNewEmail("");
     setNewName("");
+    setNewPassword("");
     setNewRate("0");
     setAddLoading(false);
     await loadEmployees();
   }
 
-  // ── Update hourly rate ────────────────────────────────────────────────────
-  async function handleSaveRate(profileId: string) {
+  // ── Open employee edit modal ──────────────────────────────────────────────
+  function openEditEmployee(emp: EmployeeWithStatus) {
+    setEditEmployee(emp);
+    setEditName(emp.full_name);
+    setEditRate(String(emp.hourly_rate));
+    setEditRole(emp.role);
+    setEditError(null);
+  }
+
+  // ── Save employee edits ───────────────────────────────────────────────────
+  async function handleSaveEmployee(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editEmployee) return;
+    setEditSaving(true);
+    setEditError(null);
+
     const rate = parseFloat(editRate);
-    if (isNaN(rate) || rate < 0) return;
+    if (isNaN(rate) || rate < 0) {
+      setEditError("Invalid hourly rate");
+      setEditSaving(false);
+      return;
+    }
 
-    await supabase
+    const { error } = await supabase
       .from("profiles")
-      .update({ hourly_rate: rate, updated_at: new Date().toISOString() })
-      .eq("id", profileId);
+      .update({
+        full_name: editName.trim(),
+        hourly_rate: rate,
+        role: editRole,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editEmployee.id);
 
-    setEditingId(null);
+    if (error) {
+      setEditError(error.message);
+      setEditSaving(false);
+      return;
+    }
+
     setEmployees((prev) =>
-      prev.map((e) => (e.id === profileId ? { ...e, hourly_rate: rate } : e))
+      prev.map((e) =>
+        e.id === editEmployee.id
+          ? { ...e, full_name: editName.trim(), hourly_rate: rate, role: editRole }
+          : e
+      )
     );
+    setEditEmployee(null);
+    setEditSaving(false);
   }
 
   // ── Toggle active/inactive ────────────────────────────────────────────────
@@ -151,6 +231,41 @@ export default function AdminView() {
         e.id === profileId ? { ...e, is_active: !current } : e
       )
     );
+  }
+
+  // ── Add job ───────────────────────────────────────────────────────────────
+  async function handleAddJob(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newJobName.trim()) return;
+    setAddingJob(true);
+
+    const { error } = await supabase
+      .from("jobs")
+      .insert({ name: newJobName.trim(), is_active: true });
+
+    if (!error) {
+      setNewJobName("");
+      await loadJobs();
+    }
+    setAddingJob(false);
+  }
+
+  // ── Toggle job active state ───────────────────────────────────────────────
+  async function handleToggleJob(jobId: string, current: boolean) {
+    await supabase
+      .from("jobs")
+      .update({ is_active: !current })
+      .eq("id", jobId);
+
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, is_active: !current } : j))
+    );
+  }
+
+  // ── Delete job ────────────────────────────────────────────────────────────
+  async function handleDeleteJob(jobId: string) {
+    await supabase.from("jobs").delete().eq("id", jobId);
+    setJobs((prev) => prev.filter((j) => j.id !== jobId));
   }
 
   const formatTime = (iso: string) =>
@@ -192,6 +307,28 @@ export default function AdminView() {
         >
           <Users className="h-3.5 w-3.5" />
           Employees
+        </button>
+        <button
+          onClick={() => setAdminTab("jobs")}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            adminTab === "jobs"
+              ? "bg-white text-orange-600 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <Briefcase className="h-3.5 w-3.5" />
+          Jobs
+        </button>
+        <button
+          onClick={() => setAdminTab("map")}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            adminTab === "map"
+              ? "bg-white text-orange-600 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          Map
         </button>
       </div>
 
@@ -318,9 +455,11 @@ export default function AdminView() {
           </div>
 
           {employees.map((emp) => (
-            <div
+            <button
               key={emp.id}
-              className={`rounded-xl bg-white border p-3 shadow-sm ${
+              type="button"
+              onClick={() => openEditEmployee(emp)}
+              className={`rounded-xl bg-white border p-3 shadow-sm text-left w-full transition-colors hover:border-orange-300 ${
                 emp.is_active ? "border-slate-100" : "border-slate-200 opacity-60"
               }`}
             >
@@ -339,70 +478,104 @@ export default function AdminView() {
                       </span>
                     )}
                   </p>
+                  {emailMap[emp.id] && (
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {emailMap[emp.id]}
+                    </p>
+                  )}
                   <p className="text-xs text-slate-400 mt-0.5">
-                    {emp.activeTasks.length} open task
+                    ${emp.hourly_rate}/hr · {emp.activeTasks.length} open task
                     {emp.activeTasks.length !== 1 ? "s" : ""}
                   </p>
                 </div>
+                <Edit2 className="h-4 w-4 text-slate-300" />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
-                <div className="flex items-center gap-2">
-                  {editingId === emp.id ? (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-slate-500">$</span>
-                      <input
-                        type="number"
-                        value={editRate}
-                        onChange={(e) => setEditRate(e.target.value)}
-                        className="w-16 rounded border border-orange-400 px-1.5 py-1 text-xs focus:outline-none"
-                        min="0"
-                        step="0.5"
-                      />
-                      <span className="text-xs text-slate-400">/hr</span>
-                      <button
-                        onClick={() => handleSaveRate(emp.id)}
-                        className="p-1 text-emerald-600 hover:text-emerald-700"
-                      >
-                        <Save className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="p-1 text-slate-400 hover:text-slate-600"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setEditingId(emp.id);
-                        setEditRate(String(emp.hourly_rate));
-                      }}
-                      className="flex items-center gap-1 text-xs text-slate-500 hover:text-orange-600 transition-colors"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                      ${emp.hourly_rate}/hr
-                    </button>
-                  )}
+      {/* ── JOBS TAB ─────────────────────────────────────────────────────────── */}
+      {adminTab === "jobs" && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">
+              Jobs ({jobs.filter((j) => j.is_active).length} active)
+            </h3>
+          </div>
 
-                  {emp.role !== "admin" && (
+          {/* Add job form */}
+          <form onSubmit={handleAddJob} className="flex gap-2">
+            <input
+              type="text"
+              value={newJobName}
+              onChange={(e) => setNewJobName(e.target.value)}
+              placeholder="New job name..."
+              className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              required
+            />
+            <button
+              type="submit"
+              disabled={addingJob}
+              className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-orange-700 transition-colors disabled:opacity-60"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+          </form>
+
+          {jobsLoading ? (
+            <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
+          ) : jobs.length === 0 ? (
+            <div className="py-8 text-center text-sm text-slate-400">
+              No jobs yet. Add one above.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className={`flex items-center justify-between rounded-xl bg-white border p-3 shadow-sm ${
+                    job.is_active ? "border-slate-100" : "border-slate-200 opacity-60"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Briefcase className={`h-4 w-4 ${job.is_active ? "text-orange-500" : "text-slate-300"}`} />
+                    <span className="text-sm font-medium text-slate-900">{job.name}</span>
+                    {!job.is_active && (
+                      <span className="text-[10px] font-medium text-slate-400 uppercase">
+                        Inactive
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleToggleActive(emp.id, emp.is_active)}
+                      onClick={() => handleToggleJob(job.id, job.is_active)}
                       className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors ${
-                        emp.is_active
+                        job.is_active
                           ? "bg-red-50 text-red-600 hover:bg-red-100"
                           : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
                       }`}
                     >
                       <CheckCircle2 className="h-3 w-3" />
-                      {emp.is_active ? "Deactivate" : "Reactivate"}
+                      {job.is_active ? "Deactivate" : "Reactivate"}
                     </button>
-                  )}
+                    <button
+                      onClick={() => handleDeleteJob(job.id)}
+                      className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
+
+      {/* ── MAP VIEW ────────────────────────────────────────────────────────── */}
+      {adminTab === "map" && <LiveMapView />}
 
       {/* ── ADD EMPLOYEE MODAL ───────────────────────────────────────────────── */}
       {showAddEmployee && (
@@ -415,7 +588,7 @@ export default function AdminView() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900">Invite Employee</h2>
+              <h2 className="text-lg font-bold text-slate-900">Add Employee</h2>
               <button
                 onClick={() => setShowAddEmployee(false)}
                 className="p-1 text-slate-400 hover:text-slate-600"
@@ -459,6 +632,20 @@ export default function AdminView() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  placeholder="Min 6 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
                   Hourly Rate ($)
                 </label>
                 <input
@@ -475,12 +662,149 @@ export default function AdminView() {
                 disabled={addLoading}
                 className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 disabled:opacity-60"
               >
-                {addLoading ? "Sending invite…" : "Send Invite Email"}
+                {addLoading ? "Creating…" : "Create Employee"}
               </button>
             </form>
             <p className="mt-3 text-center text-xs text-slate-400">
-              Employee will receive an email to set their password.
+              Employee can log in immediately with the email and password you set.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT EMPLOYEE MODAL ──────────────────────────────────────────────── */}
+      {editEmployee && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
+          onClick={() => setEditEmployee(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-slate-900">Edit Employee</h2>
+              <button
+                onClick={() => setEditEmployee(null)}
+                className="p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {editError}
+              </div>
+            )}
+
+            {emailMap[editEmployee.id] && (
+              <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                <p className="text-xs font-medium text-slate-500 mb-0.5">Login Email</p>
+                <p className="text-sm text-slate-900">{emailMap[editEmployee.id]}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEmployee} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Hourly Rate ($)
+                </label>
+                <input
+                  type="number"
+                  value={editRate}
+                  onChange={(e) => setEditRate(e.target.value)}
+                  min="0"
+                  step="0.5"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Role
+                </label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value as "admin" | "employee")}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                >
+                  <option value="employee">Employee</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              {/* Active / Inactive toggle */}
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5">
+                <span className="text-sm text-slate-700">Active Status</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleActive(editEmployee.id, editEmployee.is_active);
+                    setEditEmployee({
+                      ...editEmployee,
+                      is_active: !editEmployee.is_active,
+                    });
+                  }}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+                    editEmployee.is_active
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  {editEmployee.is_active ? "Active" : "Inactive"}
+                </button>
+              </div>
+
+              {/* Task summary */}
+              <div className="rounded-lg border border-slate-200 px-3 py-2.5">
+                <p className="text-xs font-medium text-slate-500 mb-1">Current Tasks</p>
+                {editEmployee.activeTasks.length === 0 ? (
+                  <p className="text-xs text-slate-400">No open tasks</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {editEmployee.activeTasks.map((t) => (
+                      <span
+                        key={t.id}
+                        className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700"
+                      >
+                        <ClipboardList className="h-2.5 w-2.5" />
+                        {t.title.length > 30 ? t.title.slice(0, 30) + "…" : t.title}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {editEmployee.activeShift && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                  <p className="text-xs font-medium text-emerald-700">
+                    Currently clocked in: {editEmployee.activeShift.job_name} · since{" "}
+                    {formatTime(editEmployee.activeShift.clock_in)}
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={editSaving}
+                className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 disabled:opacity-60"
+              >
+                {editSaving ? "Saving…" : "Save Changes"}
+              </button>
+            </form>
           </div>
         </div>
       )}

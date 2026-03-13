@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Play, Square, DollarSign, Briefcase, Clock } from "lucide-react";
 import { TimeEntry } from "@/lib/types";
-
-const DEFAULT_JOB_NAMES = [
-  "Riverside Kitchen Remodel",
-  "Oak St. New Build",
-  "Henderson Backyard",
-];
+import { createClient } from "@/lib/supabase/client";
 
 interface TimeClockViewProps {
   timeEntries: TimeEntry[];
@@ -21,9 +16,61 @@ export default function TimeClockView({
   onClockIn,
   onClockOut,
 }: TimeClockViewProps) {
-  const [selectedJob, setSelectedJob] = useState(DEFAULT_JOB_NAMES[0]);
+  const supabase = createClient();
+  const [jobNames, setJobNames] = useState<string[]>([]);
+  const [selectedJob, setSelectedJob] = useState("");
+  const [showNewJob, setShowNewJob] = useState(false);
+  const [newJobName, setNewJobName] = useState("");
+  const [addingJob, setAddingJob] = useState(false);
+  const [elapsed, setElapsed] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("jobs")
+      .select("name")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }) => {
+        const names = (data ?? []).map((j: { name: string }) => j.name);
+        setJobNames(names);
+        if (names.length > 0) setSelectedJob(names[0]);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeShift = timeEntries.find((e) => e.clock_out === null);
+
+  useEffect(() => {
+    if (!activeShift) {
+      setElapsed("");
+      return;
+    }
+    const update = () => {
+      const start = new Date(activeShift.clock_in).getTime();
+      const diff = Date.now() - start;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setElapsed(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [activeShift]);
+
+  async function handleAddJob() {
+    if (!newJobName.trim()) return;
+    setAddingJob(true);
+    const { error } = await supabase
+      .from("jobs")
+      .insert({ name: newJobName.trim(), is_active: true });
+    if (!error) {
+      setJobNames((prev) => [...prev, newJobName.trim()].sort());
+      setSelectedJob(newJobName.trim());
+      setNewJobName("");
+      setShowNewJob(false);
+    }
+    setAddingJob(false);
+  }
 
   const calcHours = (entry: TimeEntry): number => {
     const start = new Date(entry.clock_in).getTime();
@@ -55,8 +102,13 @@ export default function TimeClockView({
         </div>
 
         {activeShift && (
-          <div className="mb-3 text-xs text-emerald-600">
-            <span className="font-medium">{activeShift.job_name}</span> — since {formatTime(activeShift.clock_in)}
+          <div className="mb-4">
+            <div className="text-xs text-emerald-600 mb-2">
+              <span className="font-semibold">{activeShift.job_name}</span> — since {formatTime(activeShift.clock_in)}
+            </div>
+            <div className="text-3xl font-bold text-emerald-700 tabular-nums tracking-tight">
+              {elapsed}
+            </div>
           </div>
         )}
 
@@ -65,25 +117,68 @@ export default function TimeClockView({
             <label className="block text-xs font-medium text-slate-600 mb-1">Select Job</label>
             <select
               value={selectedJob}
-              onChange={(e) => setSelectedJob(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              onChange={(e) => {
+                if (e.target.value === "__ADD_NEW__") {
+                  setShowNewJob(true);
+                  setSelectedJob("");
+                } else {
+                  setSelectedJob(e.target.value);
+                  setShowNewJob(false);
+                }
+              }}
+              className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
-              {DEFAULT_JOB_NAMES.map((j) => (
-                <option key={j}>{j}</option>
-              ))}
+              {jobNames.length === 0 ? (
+                <option value="">No jobs available</option>
+              ) : (
+                jobNames.map((j) => (
+                  <option key={j} value={j}>{j}</option>
+                ))
+              )}
+              <option value="__ADD_NEW__" className="font-semibold">＋ Add New Job…</option>
             </select>
+
+            {showNewJob && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={newJobName}
+                  onChange={(e) => setNewJobName(e.target.value)}
+                  placeholder="New job name"
+                  className="flex-1 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddJob}
+                  disabled={addingJob || !newJobName.trim()}
+                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {addingJob ? "…" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewJob(false)}
+                  className="rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         <button
           onClick={() => {
             if (activeShift) {
+              if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
               onClockOut(activeShift.id);
             } else {
+              if (navigator.vibrate) navigator.vibrate(100);
               onClockIn(selectedJob);
             }
           }}
-          className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white shadow-md transition-all active:scale-[0.98] ${
+          className={`w-full flex items-center justify-center gap-2 rounded-lg py-4 text-sm font-semibold text-white shadow-md transition-all active:scale-[0.98] ${
             activeShift
               ? "bg-red-500 hover:bg-red-600"
               : "bg-emerald-600 hover:bg-emerald-700"
@@ -108,14 +203,14 @@ export default function TimeClockView({
             <Clock className="h-4 w-4 text-blue-500" />
             <span className="text-xs font-medium text-slate-500">Total Hours</span>
           </div>
-          <span className="text-xl font-bold text-slate-900">{totalHours.toFixed(1)}h</span>
+          <span className="text-2xl font-bold text-slate-900">{totalHours.toFixed(1)}h</span>
         </div>
         <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="h-4 w-4 text-emerald-500" />
             <span className="text-xs font-medium text-slate-500">Total Pay</span>
           </div>
-          <span className="text-xl font-bold text-slate-900">${totalPay.toFixed(2)}</span>
+          <span className="text-2xl font-bold text-slate-900">${totalPay.toFixed(2)}</span>
         </div>
       </div>
 
@@ -124,7 +219,15 @@ export default function TimeClockView({
         <h3 className="text-sm font-semibold text-slate-700 mb-2">Recent Entries</h3>
         <div className="flex flex-col gap-2">
           {timeEntries.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-400">No time entries yet.</div>
+            <div className="py-12 flex flex-col items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                <Clock className="h-7 w-7 text-slate-300" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-slate-600">No time entries yet</p>
+                <p className="text-xs text-slate-400 mt-0.5">Clock in to start tracking your time</p>
+              </div>
+            </div>
           ) : (
             timeEntries.map((entry) => (
               <div

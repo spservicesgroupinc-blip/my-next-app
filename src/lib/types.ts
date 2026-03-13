@@ -12,6 +12,7 @@ export interface Profile {
   role: "admin" | "employee";
   hourly_rate: number;
   is_active: boolean;
+  company_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +28,7 @@ export interface Task {
   checklist: ChecklistItem[];
   assigned_to: string | null;
   created_by: string;
+  company_id: string;
   created_at: string;
   updated_at: string;
   // Joined fields (from profile joins)
@@ -41,6 +43,7 @@ export interface TimeEntry {
   clock_in: string;
   clock_out: string | null;
   hourly_rate: number;
+  company_id: string;
   created_at: string;
 }
 
@@ -50,9 +53,28 @@ export interface ChatMessage {
   sender_id: string;
   text: string;
   image_url: string | null;
+  company_id: string;
   created_at: string;
   // Joined field
   sender?: Pick<Profile, "id" | "full_name">;
+}
+
+// ─── Job (matches public.jobs) ────────────────────────────────────────────────
+export interface Job {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+// ─── EmployeeLocation (matches public.employee_locations) ─────────────────────
+export interface EmployeeLocation {
+  id: string;
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+  updated_at: string;
 }
 
 // ─── UI ───────────────────────────────────────────────────────────────────────

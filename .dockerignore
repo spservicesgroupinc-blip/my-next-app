@@ -1,9 +1,11 @@
-Dockerfile
-.dockerignore
 node_modules
-npm-debug.log
-README.md
 .next
 .git
-.claude
-.env*.local
+.gitignore
+*.md
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
+docs

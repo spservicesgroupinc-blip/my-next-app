@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Plus, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Profile } from "@/lib/types";
+import { Profile, ChecklistItem } from "@/lib/types";
 
 interface AddTaskModalProps {
   onClose: () => void;
@@ -13,6 +13,7 @@ interface AddTaskModalProps {
     due_date: string;
     priority: "Low" | "Medium" | "High" | "Critical";
     assigned_to: string | null;
+    checklist: ChecklistItem[];
   }) => void;
   initialDate?: string;
 }
@@ -20,44 +21,139 @@ interface AddTaskModalProps {
 export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskModalProps) {
   const supabase = createClient();
   const [employees, setEmployees] = useState<Pick<Profile, "id" | "full_name">[]>([]);
+  const [jobNames, setJobNames] = useState<string[]>([]);
 
   const [title, setTitle] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [jobName, setJobName] = useState("");
   const [dueDate, setDueDate] = useState(initialDate || "");
   const [priority, setPriority] = useState<"Low" | "Medium" | "High" | "Critical">("Medium");
+  const [showDetails, setShowDetails] = useState(!!initialDate);
+
+  // Line items (checklist)
+  const [lineItems, setLineItems] = useState<ChecklistItem[]>([]);
+  const [newLineItem, setNewLineItem] = useState("");
+
+  // Inline add-new states
+  const [showNewJob, setShowNewJob] = useState(false);
+  const [newJobName, setNewJobName] = useState("");
+  const [addingJob, setAddingJob] = useState(false);
+  const [showNewEmployee, setShowNewEmployee] = useState(false);
+  const [newEmpName, setNewEmpName] = useState("");
+  const [newEmpEmail, setNewEmpEmail] = useState("");
+  const [newEmpPassword, setNewEmpPassword] = useState("");
+  const [newEmpRate, setNewEmpRate] = useState("0");
+  const [addingEmployee, setAddingEmployee] = useState(false);
+  const [addEmpError, setAddEmpError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
+    Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("is_active", true)
+        .order("full_name"),
+      supabase
+        .from("jobs")
+        .select("name")
+        .eq("is_active", true)
+        .order("name"),
+    ]).then(([profilesRes, jobsRes]) => {
+      if (profilesRes.data) setEmployees(profilesRes.data);
+      const names = (jobsRes.data ?? []).map((j: { name: string }) => j.name);
+      setJobNames(names);
+      if (names.length > 0 && !jobName) setJobName(names[0]);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleAddJob() {
+    if (!newJobName.trim()) return;
+    setAddingJob(true);
+    const { error } = await supabase
+      .from("jobs")
+      .insert({ name: newJobName.trim(), is_active: true });
+    if (!error) {
+      setJobNames((prev) => [...prev, newJobName.trim()].sort());
+      setJobName(newJobName.trim());
+      setNewJobName("");
+      setShowNewJob(false);
+    }
+    setAddingJob(false);
+  }
+
+  async function handleAddEmployee() {
+    if (!newEmpName.trim() || !newEmpEmail.trim() || !newEmpPassword) return;
+    setAddingEmployee(true);
+    setAddEmpError(null);
+    const res = await fetch("/api/admin/invite-employee", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: newEmpEmail.trim(),
+        password: newEmpPassword,
+        full_name: newEmpName.trim(),
+        hourly_rate: parseFloat(newEmpRate) || 0,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      setAddEmpError(json.error ?? "Failed to create employee");
+      setAddingEmployee(false);
+      return;
+    }
+    // Refresh employees list and select the new one
+    const { data } = await supabase
       .from("profiles")
       .select("id, full_name")
       .eq("is_active", true)
-      .order("full_name")
-      .then(({ data }) => {
-        if (data) setEmployees(data);
-      });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      .order("full_name");
+    if (data) {
+      setEmployees(data);
+      const created = data.find((e) => e.full_name === newEmpName.trim());
+      if (created) setAssignedTo(created.id);
+    }
+    setNewEmpName("");
+    setNewEmpEmail("");
+    setNewEmpPassword("");
+    setNewEmpRate("0");
+    setShowNewEmployee(false);
+    setAddingEmployee(false);
+  }
+
+  const addLineItem = () => {
+    if (!newLineItem.trim()) return;
+    setLineItems((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), text: newLineItem.trim(), completed: false },
+    ]);
+    setNewLineItem("");
+  };
+
+  const removeLineItem = (id: string) => {
+    setLineItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !jobName.trim() || !dueDate) return;
+    if (!title.trim()) return;
     onAdd({
       title: title.trim(),
-      job_name: jobName.trim(),
-      due_date: dueDate,
+      job_name: jobName.trim() || "General",
+      due_date: dueDate || new Date().toISOString().split("T")[0],
       priority,
       assigned_to: assignedTo || null,
+      checklist: lineItems,
     });
     onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 animate-[slideUp_0.3s_ease-out]"
+        className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-5 pb-8 animate-[slideUp_0.3s_ease-out] max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -68,19 +164,81 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Task Title - REQUIRED */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
-              Task Title
+              Task Name
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="e.g. Install kitchen cabinets"
+              autoFocus
               required
             />
           </div>
+
+          {/* Line Items / Checklist */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">
+              Line Items
+            </label>
+            {lineItems.length > 0 && (
+              <div className="space-y-1.5 mb-2">
+                {lineItems.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 group">
+                    <div className="h-4 w-4 rounded border border-slate-300 shrink-0" />
+                    <span className="flex-1 text-sm text-slate-700 truncate">{item.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeLineItem(item.id)}
+                      className="p-1 text-slate-300 hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newLineItem}
+                onChange={(e) => setNewLineItem(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addLineItem();
+                  }
+                }}
+                className="flex-1 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                placeholder="Add a line item..."
+              />
+              <button
+                type="button"
+                onClick={addLineItem}
+                disabled={!newLineItem.trim()}
+                className="flex items-center justify-center h-[38px] w-[38px] shrink-0 rounded-lg bg-slate-100 text-slate-500 hover:bg-orange-100 hover:text-orange-600 disabled:opacity-30 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Optional Details Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600 transition-colors w-full border-t border-slate-100 pt-3 mt-1"
+          >
+            {showDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {showDetails ? "Hide details" : "Add details (optional)"}
+          </button>
+
+          {showDetails && (<>
+          {/* Assign To */}
 
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
@@ -88,8 +246,16 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
             </label>
             <select
               value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              onChange={(e) => {
+                if (e.target.value === "__ADD_NEW__") {
+                  setShowNewEmployee(true);
+                  setAssignedTo("");
+                } else {
+                  setAssignedTo(e.target.value);
+                  setShowNewEmployee(false);
+                }
+              }}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
               <option value="">— Unassigned —</option>
               {employees.map((emp) => (
@@ -97,21 +263,116 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   {emp.full_name}
                 </option>
               ))}
+              <option value="__ADD_NEW__" className="font-semibold">＋ Add Employee…</option>
             </select>
+
+            {showNewEmployee && (
+              <div className="mt-2 rounded-lg border border-orange-200 bg-orange-50 p-3 space-y-2">
+                {addEmpError && (
+                  <p className="text-xs text-red-600">{addEmpError}</p>
+                )}
+                <input
+                  type="text"
+                  value={newEmpName}
+                  onChange={(e) => setNewEmpName(e.target.value)}
+                  placeholder="Full name"
+                  className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                />
+                <input
+                  type="email"
+                  value={newEmpEmail}
+                  onChange={(e) => setNewEmpEmail(e.target.value)}
+                  placeholder="Email"
+                  className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                />
+                <input
+                  type="password"
+                  value={newEmpPassword}
+                  onChange={(e) => setNewEmpPassword(e.target.value)}
+                  placeholder="Password (min 6 chars)"
+                  className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                />
+                <input
+                  type="number"
+                  value={newEmpRate}
+                  onChange={(e) => setNewEmpRate(e.target.value)}
+                  placeholder="Hourly rate"
+                  min="0"
+                  step="0.5"
+                  className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddEmployee}
+                    disabled={addingEmployee || !newEmpName.trim() || !newEmpEmail.trim() || !newEmpPassword}
+                    className="flex-1 rounded-md bg-orange-600 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {addingEmployee ? "Creating…" : "Create"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewEmployee(false); setAddEmpError(null); }}
+                    className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
               Job / Project
             </label>
-            <input
-              type="text"
+            <select
               value={jobName}
-              onChange={(e) => setJobName(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              placeholder="e.g. Riverside Kitchen Remodel"
-              required
-            />
+              onChange={(e) => {
+                if (e.target.value === "__ADD_NEW__") {
+                  setShowNewJob(true);
+                  setJobName("");
+                } else {
+                  setJobName(e.target.value);
+                  setShowNewJob(false);
+                }
+              }}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            >
+              <option value="">— Select a Job (optional) —</option>
+              {jobNames.map((j) => (
+                <option key={j} value={j}>{j}</option>
+              ))}
+              <option value="__ADD_NEW__" className="font-semibold">＋ Add New Job…</option>
+            </select>
+
+            {showNewJob && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={newJobName}
+                  onChange={(e) => setNewJobName(e.target.value)}
+                  placeholder="New job name"
+                  className="flex-1 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddJob}
+                  disabled={addingJob || !newJobName.trim()}
+                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {addingJob ? "…" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewJob(false)}
+                  className="rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -141,16 +402,18 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                required
               />
             </div>
           </div>
+          </>)}
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 active:scale-[0.98]"
+            disabled={!title.trim()}
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Add Task
+            <CheckCircle2 className="h-4 w-4" />
+            Create Task
           </button>
         </form>
       </div>

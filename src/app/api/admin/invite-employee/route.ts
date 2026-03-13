@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabaseAuth
     .from("profiles")
-    .select("role")
+    .select("role, company_id")
     .eq("id", user.id)
     .single();
 
@@ -21,10 +21,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden: admin only" }, { status: 403 });
   }
 
-  const { email, full_name, hourly_rate } = await req.json();
+  const { email, password, full_name, hourly_rate } = await req.json();
 
-  if (!email || !full_name) {
-    return NextResponse.json({ error: "email and full_name are required" }, { status: 400 });
+  if (!email || !full_name || !password) {
+    return NextResponse.json({ error: "email, full_name, and password are required" }, { status: 400 });
+  }
+
+  if (password.length < 6) {
+    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
   }
 
   // Use service role client to invite user
@@ -34,8 +38,11 @@ export async function POST(req: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { full_name },
+  const { data, error } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name, company_id: profile.company_id },
   });
 
   if (error) {

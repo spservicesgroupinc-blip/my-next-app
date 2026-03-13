@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { CheckSquare, Bell, Plus, LogOut, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { CheckSquare, Bell, LogOut, ChevronDown } from "lucide-react";
 import { TabId } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   activeTab: TabId;
-  onAddTask: () => void;
   userInitials: string;
 }
 
-export default function Header({ activeTab, onAddTask, userInitials }: HeaderProps) {
+export default function Header({ activeTab, userInitials }: HeaderProps) {
   const { profile, isAdmin, signOut } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showMenu]);
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between bg-white px-4 py-3 shadow-sm">
@@ -27,21 +38,13 @@ export default function Header({ activeTab, onAddTask, userInitials }: HeaderPro
       </div>
 
       <div className="flex items-center gap-3">
-        {activeTab === "tasks" && (
-          <button
-            onClick={onAddTask}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-white shadow-md transition-transform active:scale-95"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        )}
-        <button className="relative p-1 text-slate-500 hover:text-slate-700">
+        <button className="relative p-2.5 text-slate-500 hover:text-slate-700">
           <Bell className="h-5 w-5" />
           <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-orange-600" />
         </button>
 
         {/* User avatar + dropdown */}
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="flex items-center gap-1.5"
@@ -69,7 +72,7 @@ export default function Header({ activeTab, onAddTask, userInitials }: HeaderPro
                   setShowMenu(false);
                   await signOut();
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex w-full items-center gap-2 px-3 py-3 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
                 Sign out

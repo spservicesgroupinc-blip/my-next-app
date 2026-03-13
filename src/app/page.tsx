@@ -11,12 +11,14 @@ import CalendarView from "@/components/CalendarView";
 import AdminView from "@/components/AdminView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
-import { TabId, Task, TimeEntry, ChatMessage } from "@/lib/types";
+import { ToastProvider, useToast } from "@/components/Toast";
+import { TabId, Task, TimeEntry, ChatMessage, ChecklistItem } from "@/lib/types";
 import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { useLocationTracking } from "@/lib/useLocationTracking";
 
-export default function Home() {
+function HomeInner() {
   const router = useRouter();
   const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const supabase = createClient();
@@ -32,6 +34,14 @@ export default function Home() {
   const isOnline = useOnlineStatus();
   useServiceWorker();
   const { canInstall, install } = useInstallPrompt();
+
+  const { showToast } = useToast();
+
+  // Track employee GPS location when clocked in
+  const isClockedIn = timeEntries.some(
+    (e) => e.user_id === user?.id && !e.clock_out
+  );
+  useLocationTracking(isClockedIn);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -61,6 +71,10 @@ export default function Home() {
           .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
           .order("created_at", { ascending: true }),
       ]);
+
+      if (tasksRes.error) console.error("Failed to load tasks:", tasksRes.error.message);
+      if (entriesRes.error) console.error("Failed to load time entries:", entriesRes.error.message);
+      if (messagesRes.error) console.error("Failed to load messages:", messagesRes.error.message);
 
       if (tasksRes.data) setTasks(tasksRes.data as Task[]);
       if (entriesRes.data) setTimeEntries(entriesRes.data as TimeEntry[]);
@@ -178,8 +192,9 @@ export default function Home() {
     async (taskId: string) => {
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       await supabase.from("tasks").delete().eq("id", taskId);
+      showToast("Task deleted", "info");
     },
-    [supabase]
+    [supabase, showToast]
   );
 
   const handleToggleChecklist = useCallback(
@@ -210,6 +225,34 @@ export default function Home() {
     [supabase]
   );
 
+  const handleAddLineItem = useCallback(
+    async (taskId: string, text: string) => {
+      const newItem: ChecklistItem = {
+        id: crypto.randomUUID(),
+        text,
+        completed: false,
+      };
+      setTasks((prev) => {
+        const updated = prev.map((t) => {
+          if (t.id !== taskId) return t;
+          return { ...t, checklist: [...t.checklist, newItem] };
+        });
+        const updatedTask = updated.find((t) => t.id === taskId);
+        if (updatedTask) {
+          supabase
+            .from("tasks")
+            .update({
+              checklist: updatedTask.checklist,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", taskId);
+        }
+        return updated;
+      });
+    },
+    [supabase]
+  );
+
   const handleAddTask = useCallback(
     async (task: {
       title: string;
@@ -217,23 +260,35 @@ export default function Home() {
       due_date: string;
       priority: "Low" | "Medium" | "High" | "Critical";
       assigned_to: string | null;
+      checklist?: ChecklistItem[];
     }) => {
       if (!user) return;
       const { data, error } = await supabase
         .from("tasks")
         .insert({
-          ...task,
+          title: task.title,
+          job_name: task.job_name,
+          due_date: task.due_date,
+          priority: task.priority,
+          assigned_to: task.assigned_to,
           status: "active",
-          checklist: [],
+          checklist: task.checklist || [],
           created_by: user.id,
+          company_id: profile!.company_id,
         })
         .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
         .single();
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to add task:", error.message);
+        showToast("Failed to create task", "error");
+        return;
+      }
+      if (data) {
         setTasks((prev) => [data as Task, ...prev]);
+        showToast("Task created", "success");
       }
     },
-    [user, supabase]
+    [user, supabase, showToast]
   );
 
   // ── Time clock handlers ──────────────────────────────────────────────────────
@@ -249,14 +304,21 @@ export default function Home() {
           clock_in: new Date().toISOString(),
           clock_out: null,
           hourly_rate: profile.hourly_rate,
+          company_id: profile.company_id,
         })
         .select()
         .single();
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to clock in:", error.message);
+        showToast("Failed to clock in", "error");
+        return;
+      }
+      if (data) {
         setTimeEntries((prev) => [data as TimeEntry, ...prev]);
+        showToast(`Clocked in — ${jobName}`, "success");
       }
     },
-    [user, profile, supabase]
+    [user, profile, supabase, showToast]
   );
 
   const handleClockOut = useCallback(
@@ -265,12 +327,13 @@ export default function Home() {
       setTimeEntries((prev) =>
         prev.map((e) => (e.id === entryId ? { ...e, clock_out: clockOut } : e))
       );
+      showToast("Clocked out", "info");
       await supabase
         .from("time_entries")
         .update({ clock_out: clockOut })
         .eq("id", entryId);
     },
-    [supabase]
+    [supabase, showToast]
   );
 
   // ── Chat handler ─────────────────────────────────────────────────────────────
@@ -280,10 +343,14 @@ export default function Home() {
       if (!user) return;
       const { data, error } = await supabase
         .from("chat_messages")
-        .insert({ sender_id: user.id, text })
+        .insert({ sender_id: user.id, text, company_id: profile!.company_id })
         .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
         .single();
-      if (!error && data) {
+      if (error) {
+        console.error("Failed to send message:", error.message);
+        return;
+      }
+      if (data) {
         setChatMessages((prev) => [...prev, data as ChatMessage]);
       }
     },
@@ -343,7 +410,6 @@ export default function Home() {
 
       <Header
         activeTab={activeTab}
-        onAddTask={() => setShowAddModal(true)}
         userInitials={userInitials}
       />
 
@@ -354,6 +420,7 @@ export default function Home() {
             onToggleComplete={handleToggleComplete}
             onDelete={handleDeleteTask}
             onToggleChecklist={handleToggleChecklist}
+            onAddLineItem={handleAddLineItem}
             onAddTask={handleAddTask}
             showAddModal={showAddModal}
             onCloseAddModal={() => setShowAddModal(false)}
@@ -379,11 +446,19 @@ export default function Home() {
         {activeTab === "admin" && isAdmin && <AdminView />}
       </main>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddTask={() => setShowAddModal(true)} isAdmin={isAdmin} />
 
       {canInstall && !installDismissed && (
         <InstallBanner onInstall={handleInstall} onDismiss={handleDismissInstall} />
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ToastProvider>
+      <HomeInner />
+    </ToastProvider>
   );
 }
