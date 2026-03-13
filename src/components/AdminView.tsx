@@ -445,123 +445,240 @@ export default function AdminView() {
 
       {/* ── LIVE VIEW ───────────────────────────────────────────────────────── */}
       {adminTab === "live" && (
-        <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden p-4 md:grid-cols-2">
-          {/* Employee status column */}
-          <div className="flex flex-col gap-4 overflow-y-auto">
-            {/* Summary row */}
-            <div className="grid grid-cols-3 gap-2 flex-shrink-0">
-              <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
-                <p className="text-lg font-bold text-emerald-600">{clocked.length}</p>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Clocked In</p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
-                <p className="text-lg font-bold text-slate-700">{notClocked.length}</p>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Off / Away</p>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-100 p-3 text-center shadow-sm">
-                <p className="text-lg font-bold text-orange-600">
-                  {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
-                </p>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Open Tasks</p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-700">All Employees</h3>
-              <button
-                onClick={loadEmployees}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Refresh
-              </button>
-            </div>
-
-            {isLoading ? (
-              <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {employees
-                  .filter((e) => e.is_active)
-                  .map((emp) => (
-                    <div
-                      key={emp.id}
-                      className={`rounded-xl p-3 border shadow-sm ${
-                        emp.activeShift
-                          ? "bg-emerald-50 border-emerald-200"
-                          : "bg-white border-slate-100"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`h-2 w-2 rounded-full ${
-                              emp.activeShift
-                                ? "bg-emerald-500 animate-pulse"
-                                : "bg-slate-300"
-                            }`}
-                          />
-                          <span className="text-sm font-semibold text-slate-900">
-                            {emp.full_name || "Unnamed"}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            ${emp.hourly_rate}/hr
-                          </span>
-                        </div>
-                        {emp.activeShift && (
-                          <span className="text-xs font-medium text-emerald-600">
-                            {calcHours(emp.activeShift.clock_in)}h
-                          </span>
-                        )}
-                      </div>
-
-                      {emp.activeShift ? (
-                        <p className="text-xs text-emerald-700 ml-4">
-                          <span className="font-medium">{emp.activeShift.job_name}</span>
-                          {" "}· since {formatTime(emp.activeShift.clock_in)}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-slate-400 ml-4">Not clocked in</p>
-                      )}
-
-                      {emp.activeTasks.length > 0 && (
-                        <div className="mt-2 ml-4 flex flex-wrap gap-1">
-                          {emp.activeTasks.slice(0, 3).map((t) => (
-                            <span
-                              key={t.id}
-                              className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700"
-                            >
-                              <ClipboardList className="h-2.5 w-2.5" />
-                              {t.title.length > 24
-                                ? t.title.slice(0, 24) + "…"
-                                : t.title}
-                            </span>
-                          ))}
-                          {emp.activeTasks.length > 3 && (
-                            <span className="text-[10px] text-slate-400">
-                              +{emp.activeTasks.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-          
-          {/* Activity feed column */}
-          <div className="flex flex-col gap-3 rounded-xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto">
-             <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Activity Feed
-            </h3>
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <Activity className="h-12 w-12 text-slate-200" />
-              <p className="mt-4 font-semibold text-slate-700">Real-time Activity</p>
-              <p className="mt-1 text-xs text-slate-400">
-                Clock-ins, task updates, and messages will appear here.
+        <div className="flex flex-col gap-4 overflow-hidden p-4 h-full">
+          {/* Summary row - 4 stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
+            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-emerald-600">{clocked.length}</p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
+                <UserCheck className="h-3 w-3" /> Clocked In
               </p>
+            </div>
+            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-slate-700">{notClocked.length}</p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1">Off / Away</p>
+            </div>
+            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-blue-600">
+                {employees.reduce((s, e) => s + (e.activeShift ? 1 : 0), 0)}
+              </p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
+                <CircleDot className="h-3 w-3" /> In Progress
+              </p>
+            </div>
+            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-orange-600">
+                {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
+              </p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
+                <ClipboardList className="h-3 w-3" /> Open Tasks
+              </p>
+            </div>
+          </div>
+
+          {/* Split layout - Employee cards + Activity feed */}
+          <div className="flex flex-col lg:flex-row gap-4 overflow-hidden flex-1 min-h-0">
+            {/* Left: Employee cards (58%) */}
+            <div className="flex flex-col gap-3 overflow-y-auto lg:w-[58%]">
+              <div className="flex items-center justify-between flex-shrink-0">
+                <h3 className="text-sm font-semibold text-slate-700">Employee Status</h3>
+                <button
+                  onClick={loadEmployees}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh
+                </button>
+              </div>
+
+              {isLoading ? (
+                <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {employees.filter((e) => e.is_active).map((emp) => {
+                    const elapsed = emp.activeShift ? formatElapsed(emp.activeShift.clock_in) : "";
+                    const topTask = emp.activeTasks[0];
+                    const taskProgress = topTask
+                      ? topTask.checklist.length > 0
+                        ? topTask.checklist.filter((c) => c.completed).length / topTask.checklist.length
+                        : 0
+                      : null;
+
+                    return (
+                      <div
+                        key={emp.id}
+                        className={`rounded-xl p-3 border shadow-sm transition-all ${
+                          emp.activeShift
+                            ? "bg-emerald-50 border-emerald-200"
+                            : "bg-white border-slate-100"
+                        }`}
+                      >
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {/* Avatar initials */}
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-xs font-bold shrink-0">
+                              {emp.full_name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-semibold text-slate-900">
+                                  {emp.full_name || "Unnamed"}
+                                </span>
+                                {emp.activeShift && (
+                                  <span className="flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <span>${emp.hourly_rate}/hr</span>
+                                {emp.activeShift && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-emerald-600 font-mono">{elapsed}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Job info */}
+                        {emp.activeShift ? (
+                          <div className="mb-2 ml-11">
+                            <p className="text-xs text-emerald-700">
+                              <span className="font-medium">{emp.activeShift.job_name}</span>
+                              {" "}· since {formatTime(emp.activeShift.clock_in)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="ml-11">
+                            <p className="text-xs text-slate-400">Not clocked in</p>
+                          </div>
+                        )}
+
+                        {/* Current task highlight */}
+                        {topTask ? (
+                          <div className="mt-2 ml-11 rounded-lg bg-white border border-slate-100 p-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-slate-700 truncate">
+                                  {topTask.title}
+                                </p>
+                                <p className="text-[10px] text-slate-400 truncate">
+                                  {topTask.job_name}
+                                </p>
+                              </div>
+                              {taskProgress !== null && (
+                                <ProgressRing pct={taskProgress} size={36} />
+                              )}
+                            </div>
+                            {emp.activeTasks.length > 1 && (
+                              <p className="text-[10px] text-slate-400 mt-1.5">
+                                +{emp.activeTasks.length - 1} more task
+                                {emp.activeTasks.length - 1 !== 1 ? "s" : ""}
+                              </p>
+                            )}
+                          </div>
+                        ) : emp.activeShift ? (
+                          <div className="mt-2 ml-11 rounded-lg bg-amber-50 border border-amber-200 p-2">
+                            <p className="text-xs text-amber-700 flex items-center gap-1">
+                              <CircleDot className="h-3 w-3" />
+                              No active task assigned
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Activity feed (42%) */}
+            <div className="flex flex-col gap-3 rounded-xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto lg:w-[42%]">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Activity className="h-4 w-4 text-orange-600" />
+                <h3 className="text-sm font-semibold text-slate-700">Activity Feed</h3>
+                <span className="flex items-center gap-1 ml-auto text-[10px] font-medium text-emerald-600">
+                  <span className="flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  </span>
+                  Live
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {activityFeed.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center py-12">
+                    <Activity className="h-12 w-12 text-slate-200 mb-3" />
+                    <p className="font-semibold text-slate-700">No Activity Yet</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Clock-ins, task updates will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-0">
+                    {activityFeed.map((event, idx) => {
+                      const iconMap = {
+                        clock_in: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />,
+                        clock_out: <CheckCircle2 className="h-3.5 w-3.5 text-slate-400" />,
+                        task_insert: <ClipboardList className="h-3.5 w-3.5 text-blue-500" />,
+                        task_update: <RefreshCw className="h-3.5 w-3.5 text-amber-500" />,
+                        task_delete: <Trash2 className="h-3.5 w-3.5 text-red-400" />,
+                        message: <Activity className="h-3.5 w-3.5 text-purple-500" />,
+                      };
+                      const timeAgo = (ts: string) => {
+                        const diff = Date.now() - new Date(ts).getTime();
+                        const mins = Math.floor(diff / 60000);
+                        if (mins < 1) return "just now";
+                        if (mins < 60) return `${mins}m ago`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `${hrs}h ago`;
+                        return `${Math.floor(hrs / 24)}d ago`;
+                      };
+
+                      return (
+                        <div
+                          key={event.id}
+                          className={`flex items-start gap-3 py-2.5 ${
+                            idx < activityFeed.length - 1 ? "border-b border-slate-50" : ""
+                          }`}
+                        >
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50">
+                            {iconMap[event.type]}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-slate-700">
+                              <span className="font-medium text-slate-900">{event.employeeName}</span>
+                              {event.type === "clock_in" && " clocked in"}
+                              {event.type === "clock_out" && " clocked out"}
+                              {event.type === "task_insert" && " created task"}
+                              {event.type === "task_update" && " updated task"}
+                              {event.type === "task_delete" && " deleted task"}
+                              {event.taskTitle && (
+                                <span className="text-slate-500">: {event.taskTitle}</span>
+                              )}
+                              {event.jobName && (
+                                <span className="text-slate-400"> — {event.jobName}</span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(event.timestamp)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

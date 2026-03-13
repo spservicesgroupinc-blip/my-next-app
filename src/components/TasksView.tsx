@@ -56,6 +56,11 @@ export default function TasksView({
     localStorage.setItem("tasksViewMode", view);
   }, [view]);
 
+  // Wrapper for KanbanBoard that converts status to Task updates
+  const handleUpdateStatus = (taskId: string, status: "active" | "in_progress" | "completed") => {
+    onUpdateTask(taskId, { status });
+  };
+
   const filteredTasks = tasks.filter((t) => {
     const matchesSearch =
       search === "" ||
@@ -151,7 +156,7 @@ export default function TasksView({
         ) : (
           <KanbanBoard
             tasks={filteredTasks}
-            onUpdateStatus={onUpdateTask}
+            onUpdateStatus={handleUpdateStatus}
             onOpenTask={handleOpenTask}
           />
         )}
