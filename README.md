@@ -1,17 +1,37 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Prerequisites
+
+- **Node.js** >= 20 (use [nvm](https://github.com/nvm-sh/nvm) to manage versions)
+- **npm** >= 10
+
+> **Important:** Always run `npm` commands from **this project's root directory** (where `package.json` lives). A `package.json` in a parent or home directory can interfere with Node.js module resolution and cause `next dev` to fail. If you encounter module-not-found errors, verify you are in the correct directory before running any npm commands.
+>
+> With nvm installed, activate the pinned version automatically:
+> ```bash
+> nvm use   # reads .nvmrc and switches to Node 20
+> ```
+
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies **from the project root**:
+
+```bash
+cd /path/to/my-next-app   # make sure you are in the project root
+npm install
+```
+
+2. Copy the environment template and fill in your Supabase credentials:
+
+```bash
+cp .env.example .env.local
+# Edit .env.local and set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+3. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
