@@ -28,14 +28,19 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin }
   const renderTab = (tab: { id: TabId; label: string; icon: React.ElementType }) => {
     const Icon = tab.icon;
     const isActive = activeTab === tab.id;
+    const isAdminTab = tab.id === "admin";
+    const activeColor = isAdminTab ? "text-blue-600" : "text-orange-600";
     return (
       <button
         key={tab.id}
         onClick={() => onTabChange(tab.id)}
-        className={`flex flex-col items-center gap-0.5 min-w-[3rem] px-2 py-1 transition-colors ${
-          isActive ? "text-orange-600" : "text-slate-400 hover:text-slate-600"
+        className={`relative flex flex-col items-center gap-0.5 min-w-[3rem] px-2 py-2 transition-all duration-150 ${
+          isActive ? activeColor : "text-slate-400 hover:text-slate-600"
         }`}
       >
+        {isActive && (
+          <span className="absolute top-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-current" />
+        )}
         <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
         <span className={`text-[10px] leading-tight ${isActive ? "font-semibold" : "font-medium"}`}>
           {tab.label}
@@ -58,6 +63,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin }
           >
             <Plus className="h-6 w-6" strokeWidth={2.5} />
           </button>
+          <span className="text-[9px] font-semibold text-slate-400 mt-0.5">Add</span>
         </div>
 
         {/* Right tabs */}

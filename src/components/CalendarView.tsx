@@ -2,19 +2,11 @@
 
 import { useState } from "react";
 import {
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  addDays,
-  addMonths,
-  subMonths,
-  format,
-  isSameMonth,
-  isSameDay,
-  isToday,
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek,
+  addDays, addMonths, subMonths, format,
+  isSameMonth, isSameDay, isToday,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, X, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Plus, CalendarDays } from "lucide-react";
 import { Task, ChecklistItem } from "@/lib/types";
 import AddTaskModal from "./AddTaskModal";
 
@@ -44,7 +36,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
     <div className="flex items-center justify-between px-4 py-3">
       <button
         onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-        className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+        className="p-2.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -53,7 +45,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
       </h2>
       <button
         onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-        className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+        className="p-2.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
       >
         <ChevronRight className="h-5 w-5" />
       </button>
@@ -94,21 +86,20 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
           <button
             key={d.toISOString()}
             onClick={() => setSelectedDay(d)}
-            className={`relative flex flex-col items-center justify-start py-1.5 rounded-lg transition-colors ${
+            className={`relative flex flex-col items-center justify-center py-1.5 rounded-lg transition-colors ${
               !inMonth ? "text-slate-300" : "text-slate-700 hover:bg-slate-100"
             } ${today ? "bg-orange-50 font-bold" : ""} ${
               selectedDay && isSameDay(d, selectedDay) ? "ring-2 ring-orange-500 bg-orange-50" : ""
             }`}
           >
-            <span className={`text-xs ${today ? "text-orange-600" : ""}`}>
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${today ? "bg-orange-600 text-white" : inMonth ? "text-slate-700" : "text-slate-300"}`}>
               {format(d, "d")}
             </span>
-            {dayTasks.length > 0 && (
-              <div className="flex gap-0.5 mt-0.5">
-                {dayTasks.slice(0, 3).map((_, idx) => (
-                  <div key={idx} className="h-1 w-1 rounded-full bg-orange-500" />
-                ))}
-              </div>
+            {dayTasks.length === 1 && (
+              <div className="h-1 w-1 rounded-full bg-orange-500 mt-0.5" />
+            )}
+            {dayTasks.length > 1 && (
+              <span className="text-[8px] font-bold text-orange-600 leading-none mt-0.5">{dayTasks.length}</span>
             )}
           </button>
         );
@@ -134,6 +125,10 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
           className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 max-h-[60vh] overflow-y-auto animate-[slideUp_0.3s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
+          <div className="flex justify-center mb-3 -mt-1">
+            <div className="h-1 w-10 rounded-full bg-slate-200" />
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-slate-900">
               {format(selectedDay, "EEEE, MMM d")}
@@ -156,13 +151,17 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
           </div>
 
           {dayTasks.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">No tasks due this day.</p>
+            <div className="py-8 flex flex-col items-center gap-2">
+              <CalendarDays className="h-8 w-8 text-slate-200" />
+              <p className="text-sm text-slate-400">No tasks due this day.</p>
+              <p className="text-xs text-slate-300">Tap Add to schedule one.</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {dayTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100"
+                  className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-100 active:bg-slate-100 transition-colors"
                 >
                   <div className="h-2 w-2 rounded-full shrink-0" style={{
                     backgroundColor: task.priority === "Critical" ? "#dc2626" : task.priority === "High" ? "#f59e0b" : task.priority === "Medium" ? "#3b82f6" : "#94a3b8"

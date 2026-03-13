@@ -38,7 +38,7 @@ export default function TaskCard({
   const assigneeName = task.assignee?.full_name ?? "Unassigned";
 
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+    <div className={`rounded-xl bg-white p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow duration-200${task.status === "completed" ? " opacity-75" : ""}`}>
       {/* Top row: badges + actions */}
       <div className="mb-2 flex items-start justify-between">
         <div className="flex flex-wrap gap-1.5">
@@ -52,18 +52,18 @@ export default function TaskCard({
         <div className="flex items-center gap-1 ml-2 shrink-0">
           <button
             onClick={() => onToggleComplete(task.id)}
-            className={`p-1 rounded-md transition-colors ${
+            className={`p-2.5 rounded-md transition-colors ${
               task.status === "completed"
                 ? "text-emerald-500 hover:text-emerald-600"
                 : "text-slate-300 hover:text-emerald-500"
             }`}
             title={task.status === "completed" ? "Mark active" : "Mark complete"}
           >
-            <CheckCircle2 className="h-5 w-5" />
+            <CheckCircle2 className="h-6 w-6" />
           </button>
           <button
             onClick={() => onDelete(task.id)}
-            className="p-1 rounded-md text-slate-300 hover:text-red-500 transition-colors"
+            className="p-2 rounded-md text-slate-300 hover:text-red-500 transition-colors"
             title="Delete task"
           >
             <Trash2 className="h-4 w-4" />
@@ -73,7 +73,7 @@ export default function TaskCard({
 
       {/* Title */}
       <h3
-        className={`text-sm font-semibold mb-1.5 ${
+        className={`text-base font-semibold mb-1.5 ${
           task.status === "completed"
             ? "line-through text-slate-400"
             : "text-slate-900"
@@ -127,13 +127,13 @@ export default function TaskCard({
             {task.checklist.map((item: ChecklistItem) => (
               <label
                 key={item.id}
-                className="flex items-center gap-2 cursor-pointer group"
+                className="flex items-center gap-2 cursor-pointer group py-1"
               >
                 <input
                   type="checkbox"
                   checked={item.completed}
                   onChange={() => onToggleChecklist(task.id, item.id)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 accent-orange-600"
+                  className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 accent-orange-600"
                 />
                 <span
                   className={`text-xs transition-colors ${
@@ -192,7 +192,7 @@ export default function TaskCard({
         ) : (
           <button
             onClick={() => setShowAddItem(true)}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors mt-1"
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors mt-1 py-2 px-1"
           >
             <Plus className="h-3 w-3" />
             <span>Add line item</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Plus, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, ChecklistItem } from "@/lib/types";
 
@@ -28,7 +28,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
   const [jobName, setJobName] = useState("");
   const [dueDate, setDueDate] = useState(initialDate || "");
   const [priority, setPriority] = useState<"Low" | "Medium" | "High" | "Critical">("Medium");
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(!!initialDate);
 
   // Line items (checklist)
   const [lineItems, setLineItems] = useState<ChecklistItem[]>([]);
@@ -194,7 +194,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                     <button
                       type="button"
                       onClick={() => removeLineItem(item.id)}
-                      className="p-0.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      className="p-1 text-slate-300 hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -231,7 +231,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
-            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600 transition-colors w-full"
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600 transition-colors w-full border-t border-slate-100 pt-3 mt-1"
           >
             {showDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             {showDetails ? "Hide details" : "Add details (optional)"}
@@ -255,7 +255,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   setShowNewEmployee(false);
                 }
               }}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
               <option value="">— Unassigned —</option>
               {employees.map((emp) => (
@@ -337,7 +337,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   setShowNewJob(false);
                 }
               }}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
               <option value="">— Select a Job (optional) —</option>
               {jobNames.map((j) => (
@@ -410,8 +410,9 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
           <button
             type="submit"
             disabled={!title.trim()}
-            className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
+            <CheckCircle2 className="h-4 w-4" />
             Create Task
           </button>
         </form>

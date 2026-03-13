@@ -11,13 +11,14 @@ import CalendarView from "@/components/CalendarView";
 import AdminView from "@/components/AdminView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
+import { ToastProvider, useToast } from "@/components/Toast";
 import { TabId, Task, TimeEntry, ChatMessage, ChecklistItem } from "@/lib/types";
 import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { useLocationTracking } from "@/lib/useLocationTracking";
 
-export default function Home() {
+function HomeInner() {
   const router = useRouter();
   const { user, profile, isLoading: authLoading, isAdmin } = useAuth();
   const supabase = createClient();
@@ -33,6 +34,8 @@ export default function Home() {
   const isOnline = useOnlineStatus();
   useServiceWorker();
   const { canInstall, install } = useInstallPrompt();
+
+  const { showToast } = useToast();
 
   // Track employee GPS location when clocked in
   const isClockedIn = timeEntries.some(
@@ -189,8 +192,9 @@ export default function Home() {
     async (taskId: string) => {
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       await supabase.from("tasks").delete().eq("id", taskId);
+      showToast("Task deleted", "info");
     },
-    [supabase]
+    [supabase, showToast]
   );
 
   const handleToggleChecklist = useCallback(
@@ -276,13 +280,15 @@ export default function Home() {
         .single();
       if (error) {
         console.error("Failed to add task:", error.message);
+        showToast("Failed to create task", "error");
         return;
       }
       if (data) {
         setTasks((prev) => [data as Task, ...prev]);
+        showToast("Task created", "success");
       }
     },
-    [user, supabase]
+    [user, supabase, showToast]
   );
 
   // ── Time clock handlers ──────────────────────────────────────────────────────
@@ -304,13 +310,15 @@ export default function Home() {
         .single();
       if (error) {
         console.error("Failed to clock in:", error.message);
+        showToast("Failed to clock in", "error");
         return;
       }
       if (data) {
         setTimeEntries((prev) => [data as TimeEntry, ...prev]);
+        showToast(`Clocked in — ${jobName}`, "success");
       }
     },
-    [user, profile, supabase]
+    [user, profile, supabase, showToast]
   );
 
   const handleClockOut = useCallback(
@@ -319,12 +327,13 @@ export default function Home() {
       setTimeEntries((prev) =>
         prev.map((e) => (e.id === entryId ? { ...e, clock_out: clockOut } : e))
       );
+      showToast("Clocked out", "info");
       await supabase
         .from("time_entries")
         .update({ clock_out: clockOut })
         .eq("id", entryId);
     },
-    [supabase]
+    [supabase, showToast]
   );
 
   // ── Chat handler ─────────────────────────────────────────────────────────────
@@ -443,5 +452,13 @@ export default function Home() {
         <InstallBanner onInstall={handleInstall} onDismiss={handleDismissInstall} />
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ToastProvider>
+      <HomeInner />
+    </ToastProvider>
   );
 }
