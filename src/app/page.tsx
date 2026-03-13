@@ -503,7 +503,10 @@ function HomeInner() {
         userInitials={userInitials}
       />
 
-      <main className={`flex-1 ${activeTab === "chat" ? "overflow-hidden" : "overflow-y-auto"}`}>
+      <main
+        className={`flex-1 min-h-0 ${activeTab === "chat" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
+        style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom))" }}
+      >
         {activeTab === "tasks" && (
           <TasksView
             tasks={tasks}

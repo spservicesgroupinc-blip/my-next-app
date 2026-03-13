@@ -71,9 +71,9 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
@@ -142,7 +142,7 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="border-t border-slate-200 bg-white p-3">
         <div className="flex items-center gap-2">
           <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
             <ImagePlus className="h-5 w-5" />

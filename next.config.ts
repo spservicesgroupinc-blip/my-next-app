@@ -1,10 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  turbopack: {
-    root: __dirname,
-  },
   headers: async () => [
     {
       source: "/sw.js",
