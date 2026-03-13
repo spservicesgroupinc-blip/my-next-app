@@ -230,6 +230,7 @@ export default function Home() {
           status: "active",
           checklist: [],
           created_by: user.id,
+          company_id: profile!.company_id,
         })
         .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
         .single();
@@ -257,6 +258,7 @@ export default function Home() {
           clock_in: new Date().toISOString(),
           clock_out: null,
           hourly_rate: profile.hourly_rate,
+          company_id: profile.company_id,
         })
         .select()
         .single();
@@ -292,7 +294,7 @@ export default function Home() {
       if (!user) return;
       const { data, error } = await supabase
         .from("chat_messages")
-        .insert({ sender_id: user.id, text })
+        .insert({ sender_id: user.id, text, company_id: profile!.company_id })
         .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
         .single();
       if (error) {
