@@ -9,6 +9,9 @@ import TimeClockView from "@/components/TimeClockView";
 import ChatView from "@/components/ChatView";
 import CalendarView from "@/components/CalendarView";
 import AdminView from "@/components/AdminView";
+import FabMenu from "@/components/FabMenu";
+import TimeEntryModal from "@/components/TimeEntryModal";
+import JobsView from "@/components/JobsView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
 import { ToastProvider, useToast } from "@/components/Toast";
@@ -28,6 +31,9 @@ function HomeInner() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeTab, setActiveTab] = useState<TabId>("tasks");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showFabMenu, setShowFabMenu] = useState(false);
+  const [showTimeEntryModal, setShowTimeEntryModal] = useState(false);
+  const [showJobsView, setShowJobsView] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataErrors, setDataErrors] = useState<{ tasks?: string; timeEntries?: string; chat?: string }>({});
@@ -380,6 +386,41 @@ function HomeInner() {
     [supabase, showToast]
   );
 
+  const handleAddTimeEntry = useCallback(
+    async (entry: {
+      job_name: string;
+      clock_in: string;
+      clock_out: string;
+      hours: number;
+      hourly_rate: number;
+    }) => {
+      if (!user || !profile) return;
+      const { data, error } = await supabase
+        .from("time_entries")
+        .insert({
+          user_id: user.id,
+          job_name: entry.job_name,
+          clock_in: entry.clock_in,
+          clock_out: entry.clock_out,
+          hourly_rate: entry.hourly_rate,
+          company_id: profile.company_id,
+        })
+        .select()
+        .single();
+      if (error) {
+        console.error("Failed to add time entry:", error.message);
+        showToast("Failed to log time", "error");
+        return;
+      }
+      if (data) {
+        setTimeEntries((prev) => [data as TimeEntry, ...prev]);
+        showToast("Time entry logged", "success");
+        setShowTimeEntryModal(false);
+      }
+    },
+    [user, profile, supabase, showToast]
+  );
+
   // ── Chat handler ─────────────────────────────────────────────────────────────
 
   const handleSendMessage = useCallback(
@@ -540,7 +581,67 @@ function HomeInner() {
         {activeTab === "admin" && isAdmin && <AdminView />}
       </main>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddTask={() => setShowAddModal(true)} isAdmin={isAdmin} />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddTask={() => setShowFabMenu(true)} isAdmin={isAdmin} />
+
+      {/* FAB Slide-out Menu */}
+      <FabMenu
+        isOpen={showFabMenu}
+        onClose={() => setShowFabMenu(false)}
+        onSelectTask={() => setShowAddModal(true)}
+        onSelectJob={() => setShowJobsView(true)}
+        onSelectTime={() => setShowTimeEntryModal(true)}
+      />
+
+      {/* Add Task Modal */}
+      {showAddModal && (
+        <TasksView
+          tasks={tasks}
+          onToggleComplete={handleToggleComplete}
+          onDelete={handleDeleteTask}
+          onToggleChecklist={handleToggleChecklist}
+          onAddLineItem={handleAddLineItem}
+          onUpdateTask={handleUpdateTask}
+          isAdmin={isAdmin}
+          onAddTask={handleAddTask}
+          showAddModal={showAddModal}
+          onCloseAddModal={() => setShowAddModal(false)}
+        />
+      )}
+
+      {/* Manual Time Entry Modal */}
+      {showTimeEntryModal && (
+        <TimeEntryModal
+          onClose={() => setShowTimeEntryModal(false)}
+          onAddTime={handleAddTimeEntry}
+        />
+      )}
+
+      {/* Jobs View Modal */}
+      {showJobsView && (
+        <div className="fixed inset-0 z-[160] bg-white">
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+              <h2 className="text-lg font-bold text-slate-900">Jobs Management</h2>
+              <button
+                onClick={() => setShowJobsView(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+              >
+                <span className="text-lg leading-none">×</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <JobsView
+                onClose={() => setShowJobsView(false)}
+                onSelectJob={(jobName) => {
+                  setShowJobsView(false);
+                  setShowTimeEntryModal(true);
+                  // Note: You may want to pass the selected job to TimeEntryModal
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {canInstall && !installDismissed && (
         <InstallBanner onInstall={handleInstall} onDismiss={handleDismissInstall} />
