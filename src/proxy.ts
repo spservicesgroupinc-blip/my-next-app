@@ -16,8 +16,8 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           // Set cookies on the request for server components
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
           )
           // Create new response and set cookies on it
           supabaseResponse = NextResponse.next({
