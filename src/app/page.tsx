@@ -112,6 +112,9 @@ function HomeInner() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages" },
         async (payload) => {
+          // Skip if this is our own message (already added via optimistic update)
+          if (payload.new.sender_id === user?.id) return;
+
           // Fetch the full message with sender profile
           const { data } = await supabase
             .from("chat_messages")
@@ -119,11 +122,7 @@ function HomeInner() {
             .eq("id", payload.new.id)
             .single();
           if (data) {
-            setChatMessages((prev) => {
-              // Avoid duplicates (optimistic update may already have added it)
-              if (prev.some((m) => m.id === data.id)) return prev;
-              return [...prev, data as ChatMessage];
-            });
+            setChatMessages((prev) => [...prev, data as ChatMessage]);
           }
         }
       )
