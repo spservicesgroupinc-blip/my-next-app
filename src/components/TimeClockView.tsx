@@ -19,6 +19,9 @@ export default function TimeClockView({
   const supabase = createClient();
   const [jobNames, setJobNames] = useState<string[]>([]);
   const [selectedJob, setSelectedJob] = useState("");
+  const [showNewJob, setShowNewJob] = useState(false);
+  const [newJobName, setNewJobName] = useState("");
+  const [addingJob, setAddingJob] = useState(false);
 
   useEffect(() => {
     supabase
@@ -34,6 +37,21 @@ export default function TimeClockView({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeShift = timeEntries.find((e) => e.clock_out === null);
+
+  async function handleAddJob() {
+    if (!newJobName.trim()) return;
+    setAddingJob(true);
+    const { error } = await supabase
+      .from("jobs")
+      .insert({ name: newJobName.trim(), is_active: true });
+    if (!error) {
+      setJobNames((prev) => [...prev, newJobName.trim()].sort());
+      setSelectedJob(newJobName.trim());
+      setNewJobName("");
+      setShowNewJob(false);
+    }
+    setAddingJob(false);
+  }
 
   const calcHours = (entry: TimeEntry): number => {
     const start = new Date(entry.clock_in).getTime();
@@ -75,7 +93,15 @@ export default function TimeClockView({
             <label className="block text-xs font-medium text-slate-600 mb-1">Select Job</label>
             <select
               value={selectedJob}
-              onChange={(e) => setSelectedJob(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value === "__ADD_NEW__") {
+                  setShowNewJob(true);
+                  setSelectedJob("");
+                } else {
+                  setSelectedJob(e.target.value);
+                  setShowNewJob(false);
+                }
+              }}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
               {jobNames.length === 0 ? (
@@ -85,7 +111,36 @@ export default function TimeClockView({
                   <option key={j} value={j}>{j}</option>
                 ))
               )}
+              <option value="__ADD_NEW__" className="font-semibold">＋ Add New Job…</option>
             </select>
+
+            {showNewJob && (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={newJobName}
+                  onChange={(e) => setNewJobName(e.target.value)}
+                  placeholder="New job name"
+                  className="flex-1 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddJob}
+                  disabled={addingJob || !newJobName.trim()}
+                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {addingJob ? "…" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewJob(false)}
+                  className="rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         )}
 
