@@ -253,6 +253,24 @@ function HomeInner() {
     [supabase]
   );
 
+  const handleUpdateTask = useCallback(
+    async (taskId: string, updates: Partial<Pick<Task, "title" | "job_name" | "due_date" | "priority" | "status" | "assigned_to" | "checklist">>) => {
+      // Optimistic update
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
+      );
+      const { error } = await supabase
+        .from("tasks")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", taskId);
+      if (error) {
+        console.error("Failed to update task:", error.message);
+        showToast("Failed to save changes", "error");
+      }
+    },
+    [supabase, showToast]
+  );
+
   const handleAddTask = useCallback(
     async (task: {
       title: string;
@@ -421,6 +439,8 @@ function HomeInner() {
             onDelete={handleDeleteTask}
             onToggleChecklist={handleToggleChecklist}
             onAddLineItem={handleAddLineItem}
+            onUpdateTask={handleUpdateTask}
+            isAdmin={isAdmin}
             onAddTask={handleAddTask}
             showAddModal={showAddModal}
             onCloseAddModal={() => setShowAddModal(false)}
