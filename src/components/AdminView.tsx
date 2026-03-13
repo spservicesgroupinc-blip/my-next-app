@@ -380,6 +380,14 @@ export default function AdminView() {
     return (ms / (1000 * 60 * 60)).toFixed(1);
   };
 
+  const formatElapsed = (clockIn: string) => {
+    const ms = Date.now() - new Date(clockIn).getTime();
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
   const clocked = employees.filter((e) => e.activeShift !== null);
   const notClocked = employees.filter((e) => e.activeShift === null && e.is_active);
 
