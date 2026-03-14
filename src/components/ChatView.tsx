@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, ImagePlus, MessageCircle } from "lucide-react";
+import { Send, MessageCircle } from "lucide-react";
 import { ChatMessage } from "@/lib/types";
 
 interface ChatViewProps {
@@ -43,14 +43,14 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
 
   const getAvatarColor = (name: string): string => {
     const colors = [
-      "bg-violet-500",
-      "bg-blue-500",
-      "bg-emerald-500",
-      "bg-amber-500",
-      "bg-pink-500",
-      "bg-cyan-500",
-      "bg-indigo-500",
-      "bg-rose-500",
+      "bg-gradient-to-br from-violet-500 to-violet-600",
+      "bg-gradient-to-br from-blue-500 to-blue-600",
+      "bg-gradient-to-br from-emerald-500 to-emerald-600",
+      "bg-gradient-to-br from-amber-500 to-amber-600",
+      "bg-gradient-to-br from-pink-500 to-pink-600",
+      "bg-gradient-to-br from-cyan-500 to-cyan-600",
+      "bg-gradient-to-br from-indigo-500 to-indigo-600",
+      "bg-gradient-to-br from-rose-500 to-rose-600",
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -73,10 +73,10 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
   return (
     <div className="flex flex-1 min-h-0 flex-col">
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50">
               <MessageCircle className="h-8 w-8 text-slate-300" />
             </div>
             <div className="text-center">
@@ -96,24 +96,24 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
             return (
               <div key={msg.id}>
                 {showDateSep && (
-                  <div className="flex items-center gap-3 my-2">
-                    <div className="flex-1 h-px bg-slate-100" />
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                  <div className="flex items-center gap-3 my-3">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-white px-2 py-0.5 rounded-full">
                       {formatDateSeparator(msg.created_at)}
                     </span>
-                    <div className="flex-1 h-px bg-slate-100" />
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
                   </div>
                 )}
                 <div className={`flex gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}>
                   <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-                      isMe ? "bg-orange-600" : getAvatarColor(senderName)
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-md ${
+                      isMe ? "bg-gradient-to-br from-orange-500 to-orange-600" : getAvatarColor(senderName)
                     }`}
                   >
                     {getInitials(senderName)}
                   </div>
                   <div className={`max-w-[75%] ${isMe ? "items-end" : ""}`}>
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`text-xs font-semibold ${
                           isMe ? "text-orange-600" : "text-slate-700"
@@ -124,10 +124,10 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
                       <span className="text-[10px] text-slate-400">{formatTime(msg.created_at)}</span>
                     </div>
                     <div
-                      className={`rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                      className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                         isMe
-                          ? "bg-orange-600 text-white rounded-tr-sm"
-                          : "bg-white text-slate-800 shadow-sm border border-slate-100 rounded-tl-sm"
+                          ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm"
+                          : "bg-white text-slate-800 border border-slate-100 rounded-tl-sm hover:shadow-md transition-shadow"
                       }`}
                     >
                       {msg.text}
@@ -142,25 +142,22 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-200 bg-white p-3">
-        <div className="flex items-center gap-2">
-          <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
-            <ImagePlus className="h-5 w-5" />
-          </button>
+      <div className="border-t border-slate-200 bg-white/95 backdrop-blur-sm p-3">
+        <div className="flex items-center gap-2 max-w-3xl mx-auto">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-600 text-white shadow-md transition-all hover:bg-orange-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           </button>
         </div>
       </div>

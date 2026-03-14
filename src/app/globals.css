@@ -208,3 +208,34 @@ input, select, textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .shimmer-pulse {
+    animation: none !important;
+    background: #ffffff;
+  }
+  
+  .animate-pulse {
+    animation: none !important;
+  }
+}
+
+/* Enhanced scrollbar with gradient */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+}

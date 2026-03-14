@@ -394,22 +394,22 @@ export default function AdminView() {
   return (
     <div className="flex h-full flex-col">
       {/* Admin tab toggle */}
-      <div className="flex-shrink-0 border-b border-slate-200 bg-white p-4">
-        <div className="flex rounded-lg bg-slate-100 p-0.5">
+      <div className="flex-shrink-0 border-b border-slate-200 bg-white p-3">
+        <div className="flex rounded-xl bg-slate-100 p-1">
           <button
             onClick={() => setAdminTab("live")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "live"
                 ? "bg-white text-orange-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
             <Clock className="h-3.5 w-3.5" />
-            Live View
+            Live
           </button>
           <button
             onClick={() => setAdminTab("employees")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "employees"
                 ? "bg-white text-orange-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -420,7 +420,7 @@ export default function AdminView() {
           </button>
           <button
             onClick={() => setAdminTab("jobs")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "jobs"
                 ? "bg-white text-orange-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -431,7 +431,7 @@ export default function AdminView() {
           </button>
           <button
             onClick={() => setAdminTab("map")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "map"
                 ? "bg-white text-orange-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -448,30 +448,30 @@ export default function AdminView() {
         <div className="flex flex-col gap-4 overflow-hidden p-4 flex-1 min-h-0">
           {/* Summary row - 4 stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
-            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-emerald-600">{clocked.length}</p>
               <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
                 <UserCheck className="h-3 w-3" /> Clocked In
               </p>
             </div>
-            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-slate-700">{notClocked.length}</p>
               <p className="text-[10px] text-slate-400 font-medium mt-1">Off / Away</p>
             </div>
-            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-blue-600">
                 {employees.reduce((s, e) => s + (e.activeShift ? 1 : 0), 0)}
               </p>
               <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
-                <CircleDot className="h-3 w-3" /> In Progress
+                <CircleDot className="h-3 w-3" /> Active
               </p>
             </div>
-            <div className="rounded-xl bg-white border border-slate-100 p-4 text-center shadow-sm">
+            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-orange-600">
                 {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
               </p>
               <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
-                <ClipboardList className="h-3 w-3" /> Open Tasks
+                <ClipboardList className="h-3 w-3" /> Tasks
               </p>
             </div>
           </div>
@@ -507,9 +507,9 @@ export default function AdminView() {
                     return (
                       <div
                         key={emp.id}
-                        className={`rounded-xl p-3 border shadow-sm transition-all ${
+                        className={`rounded-2xl p-3.5 border shadow-sm transition-all hover:shadow-md ${
                           emp.activeShift
-                            ? "bg-emerald-50 border-emerald-200"
+                            ? "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200"
                             : "bg-white border-slate-100"
                         }`}
                       >
@@ -517,7 +517,7 @@ export default function AdminView() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {/* Avatar initials */}
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-xs font-bold shrink-0">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 text-xs font-bold shrink-0 shadow-sm">
                               {emp.full_name
                                 .split(" ")
                                 .map((n) => n[0])
@@ -538,7 +538,7 @@ export default function AdminView() {
                                 )}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <span>${emp.hourly_rate}/hr</span>
+                                <span className="font-medium">${emp.hourly_rate}/hr</span>
                                 {emp.activeShift && (
                                   <>
                                     <span>•</span>
@@ -552,21 +552,21 @@ export default function AdminView() {
 
                         {/* Job info */}
                         {emp.activeShift ? (
-                          <div className="mb-2 ml-11">
-                            <p className="text-xs text-emerald-700">
-                              <span className="font-medium">{emp.activeShift.job_name}</span>
-                              {" "}· since {formatTime(emp.activeShift.clock_in)}
+                          <div className="mb-2 ml-12">
+                            <p className="text-xs text-emerald-700 font-medium">
+                              {emp.activeShift.job_name}
+                              <span className="text-emerald-600 ml-1">· since {formatTime(emp.activeShift.clock_in)}</span>
                             </p>
                           </div>
                         ) : (
-                          <div className="ml-11">
+                          <div className="ml-12">
                             <p className="text-xs text-slate-400">Not clocked in</p>
                           </div>
                         )}
 
                         {/* Current task highlight */}
                         {topTask ? (
-                          <div className="mt-2 ml-11 rounded-lg bg-white border border-slate-100 p-2">
+                          <div className="mt-2 ml-12 rounded-xl bg-white border border-slate-100 p-2.5">
                             <div className="flex items-center justify-between">
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-slate-700 truncate">
@@ -588,9 +588,9 @@ export default function AdminView() {
                             )}
                           </div>
                         ) : emp.activeShift ? (
-                          <div className="mt-2 ml-11 rounded-lg bg-amber-50 border border-amber-200 p-2">
-                            <p className="text-xs text-amber-700 flex items-center gap-1">
-                              <CircleDot className="h-3 w-3" />
+                          <div className="mt-2 ml-12 rounded-xl bg-amber-50 border border-amber-200 p-2.5">
+                            <p className="text-xs text-amber-700 font-medium flex items-center gap-1.5">
+                              <CircleDot className="h-3.5 w-3.5" />
                               No active task assigned
                             </p>
                           </div>
@@ -603,7 +603,7 @@ export default function AdminView() {
             </div>
 
             {/* Right: Activity feed (42%) */}
-            <div className="flex flex-col gap-3 rounded-xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto lg:w-[42%]">
+            <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto lg:w-[42%]">
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Activity className="h-4 w-4 text-orange-600" />
                 <h3 className="text-sm font-semibold text-slate-700">Activity Feed</h3>
@@ -619,7 +619,9 @@ export default function AdminView() {
               <div className="flex-1 overflow-y-auto">
                 {activityFeed.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center py-12">
-                    <Activity className="h-12 w-12 text-slate-200 mb-3" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 mb-3">
+                      <Activity className="h-7 w-7 text-slate-300" />
+                    </div>
                     <p className="font-semibold text-slate-700">No Activity Yet</p>
                     <p className="text-xs text-slate-400 mt-1">
                       Clock-ins, task updates will appear here.

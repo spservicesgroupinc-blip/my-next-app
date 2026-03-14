@@ -50,20 +50,24 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin }
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center justify-around py-1.5 relative">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around py-2 relative">
         {/* Left tabs */}
         {leftTabs.map(renderTab)}
 
-        {/* Center FAB */}
-        <div className="flex flex-col items-center -mt-5">
+        {/* Center FAB - Enlarged, no label needed */}
+        <div className="flex items-center justify-center">
           <button
             onClick={onAddTask}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-600 text-white shadow-lg shadow-orange-600/30 transition-transform active:scale-90 hover:bg-orange-700"
+            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-600/40 
+              transition-all duration-200 active:scale-90 hover:shadow-xl hover:shadow-orange-600/50 hover:-translate-y-0.5
+              focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+            aria-label="Add new item"
           >
-            <Plus className="h-6 w-6" strokeWidth={2.5} />
+            <Plus className="h-7 w-7" strokeWidth={2.5} />
+            {/* Subtle ring animation on hover */}
+            <span className="absolute inset-0 rounded-full border-2 border-orange-400 opacity-0 hover:opacity-20 transition-opacity" />
           </button>
-          <span className="text-[9px] font-semibold text-slate-400 mt-0.5">Add</span>
         </div>
 
         {/* Right tabs */}

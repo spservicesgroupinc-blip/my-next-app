@@ -136,6 +136,12 @@ export default function TaskDetailDrawer({
     completed: "Done",
   };
 
+  const statusOpts = [
+    { value: "active" as const, label: "Active", icon: null },
+    { value: "in_progress" as const, label: "In Progress", icon: null },
+    { value: "completed" as const, label: "Done", icon: CheckCircle2 },
+  ] as const;
+
   return (
     <>
       {/* Backdrop */}
@@ -202,25 +208,33 @@ export default function TaskDetailDrawer({
         </div>
 
         <div className="px-5 py-4 space-y-5 pb-safe pb-8">
-          {/* Status action bar */}
-          <div className="grid grid-cols-3 gap-2">
-            {(["active", "in_progress", "completed"] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => save({ status: s })}
-                className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                  localTask.status === s
-                    ? s === "completed"
-                      ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
-                      : s === "in_progress"
-                      ? "bg-blue-500 text-white border-blue-500 shadow-sm"
-                      : "bg-slate-700 text-white border-slate-700 shadow-sm"
-                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
-                }`}
-              >
-                {statusLabels[s]}
-              </button>
-            ))}
+          {/* Compact Segmented Control for Status */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100">
+            {statusOpts.map((opt) => {
+              const isActive = localTask.status === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => save({ status: opt.value })}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs font-semibold transition-all active:scale-[0.98] ${
+                    isActive
+                      ? opt.value === "completed"
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : opt.value === "in_progress"
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "bg-slate-800 text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                  <span className="hidden sm:inline">{opt.label}</span>
+                  <span className="sm:hidden">
+                    {opt.label === "In Progress" ? "Active" : opt.label === "Done" ? "Done" : "Active"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Details grid */}

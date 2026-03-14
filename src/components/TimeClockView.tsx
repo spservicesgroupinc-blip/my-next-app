@@ -93,9 +93,9 @@ export default function TimeClockView({
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       {/* Status Card */}
-      <div className={`rounded-xl p-5 shadow-sm ${activeShift ? "bg-emerald-50 border border-emerald-200" : "bg-white border border-slate-100"}`}>
+      <div className={`rounded-2xl p-5 shadow-sm ${activeShift ? "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200" : "bg-white border border-slate-100"}`}>
         <div className="flex items-center gap-2 mb-3">
-          <div className={`h-3 w-3 rounded-full ${activeShift ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
+          <div className={`h-2.5 w-2.5 rounded-full ${activeShift ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
           <span className={`text-sm font-semibold ${activeShift ? "text-emerald-700" : "text-slate-500"}`}>
             {activeShift ? "Currently Clocked In" : "Not Clocked In"}
           </span>
@@ -103,10 +103,10 @@ export default function TimeClockView({
 
         {activeShift && (
           <div className="mb-4">
-            <div className="text-xs text-emerald-600 mb-2">
+            <div className="text-xs text-emerald-600 mb-2 font-medium">
               <span className="font-semibold">{activeShift.job_name}</span> — since {formatTime(activeShift.clock_in)}
             </div>
-            <div className="text-3xl font-bold text-emerald-700 tabular-nums tracking-tight">
+            <div className="text-4xl font-bold text-emerald-700 tabular-nums tracking-tight">
               {elapsed}
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function TimeClockView({
 
         {!activeShift && (
           <div className="mb-4">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Select Job</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Select Job</label>
             <select
               value={selectedJob}
               onChange={(e) => {
@@ -126,7 +126,7 @@ export default function TimeClockView({
                   setShowNewJob(false);
                 }
               }}
-              className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
             >
               {jobNames.length === 0 ? (
                 <option value="">No jobs available</option>
@@ -145,21 +145,21 @@ export default function TimeClockView({
                   value={newJobName}
                   onChange={(e) => setNewJobName(e.target.value)}
                   placeholder="New job name"
-                  className="flex-1 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                  className="flex-1 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleAddJob}
                   disabled={addingJob || !newJobName.trim()}
-                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                  className="rounded-lg bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50 transition-all active:scale-[0.98]"
                 >
                   {addingJob ? "…" : "Add"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowNewJob(false)}
-                  className="rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 px-3 py-2.5 text-xs text-slate-500 hover:bg-slate-50 transition-colors active:scale-[0.98]"
                 >
                   ✕
                 </button>
@@ -170,27 +170,26 @@ export default function TimeClockView({
 
         <button
           onClick={() => {
+            if (navigator.vibrate) navigator.vibrate(activeShift ? [100, 50, 100] : 100);
             if (activeShift) {
-              if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
               onClockOut(activeShift.id);
             } else {
-              if (navigator.vibrate) navigator.vibrate(100);
               onClockIn(selectedJob);
             }
           }}
-          className={`w-full flex items-center justify-center gap-2 rounded-lg py-4 text-sm font-semibold text-white shadow-md transition-all active:scale-[0.98] ${
+          className={`w-full flex items-center justify-center gap-2 rounded-xl py-4 text-sm font-semibold text-white shadow-md transition-all active:scale-[0.98] hover:shadow-lg ${
             activeShift
-              ? "bg-red-500 hover:bg-red-600"
-              : "bg-emerald-600 hover:bg-emerald-700"
+              ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+              : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
           }`}
         >
           {activeShift ? (
             <>
-              <Square className="h-4 w-4" /> Clock Out
+              <Square className="h-5 w-5" /> Clock Out
             </>
           ) : (
             <>
-              <Play className="h-4 w-4" /> Clock In
+              <Play className="h-5 w-5" /> Clock In
             </>
           )}
         </button>
@@ -198,14 +197,14 @@ export default function TimeClockView({
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+        <div className="rounded-2xl bg-white p-4 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="h-4 w-4 text-blue-500" />
             <span className="text-xs font-medium text-slate-500">Total Hours</span>
           </div>
           <span className="text-2xl font-bold text-slate-900">{totalHours.toFixed(1)}h</span>
         </div>
-        <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+        <div className="rounded-2xl bg-white p-4 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="h-4 w-4 text-emerald-500" />
             <span className="text-xs font-medium text-slate-500">Total Pay</span>
@@ -220,8 +219,8 @@ export default function TimeClockView({
         <div className="flex flex-col gap-2">
           {timeEntries.length === 0 ? (
             <div className="py-12 flex flex-col items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-                <Clock className="h-7 w-7 text-slate-300" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50">
+                <Clock className="h-8 w-8 text-slate-300" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold text-slate-600">No time entries yet</p>
@@ -232,11 +231,11 @@ export default function TimeClockView({
             timeEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm border border-slate-100"
+                className="flex items-center justify-between rounded-2xl bg-white p-3.5 shadow-sm border border-slate-100 transition-all hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100">
-                    <Briefcase className="h-4 w-4 text-orange-600" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-100 to-orange-50">
+                    <Briefcase className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-900">{entry.job_name}</p>
