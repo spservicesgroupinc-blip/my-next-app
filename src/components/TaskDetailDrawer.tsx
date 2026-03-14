@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Trash2, Calendar, User, Briefcase, AlertTriangle,
-  Plus, Clock
+  Plus, Clock, CheckCircle2
 } from "lucide-react";
 import { Task, ChecklistItem, Profile, Job } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
