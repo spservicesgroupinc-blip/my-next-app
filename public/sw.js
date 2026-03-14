@@ -122,6 +122,8 @@ self.addEventListener('push', (event) => {
       badge: '/icons/icon-192.png',
       data: { url: data.url || '/' },
       actions: data.actions || [],
+      tag: data.tag || 'protask-notification',
+      renotify: true,
     })
   );
 });
