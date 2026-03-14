@@ -212,12 +212,17 @@ function HomeInner() {
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
       );
-      await supabase
+      // Note: updated_at and updated_by are handled by database trigger
+      const { error } = await supabase
         .from("tasks")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus })
         .eq("id", taskId);
+      if (error) {
+        console.error("Failed to toggle task:", error.message);
+        showToast("Failed to update task", "error");
+      }
     },
-    [tasks, supabase]
+    [tasks, supabase, showToast]
   );
 
   const handleDeleteTask = useCallback(
@@ -243,18 +248,22 @@ function HomeInner() {
         });
         const updatedTask = updated.find((t) => t.id === taskId);
         if (updatedTask) {
+          // Note: updated_at and updated_by are handled by database trigger
           supabase
             .from("tasks")
-            .update({
-              checklist: updatedTask.checklist,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", taskId);
+            .update({ checklist: updatedTask.checklist })
+            .eq("id", taskId)
+            .then(({ error }) => {
+              if (error) {
+                console.error("Failed to toggle checklist:", error.message);
+                showToast("Failed to update checklist", "error");
+              }
+            });
         }
         return updated;
       });
     },
-    [supabase]
+    [supabase, showToast]
   );
 
   const handleAddLineItem = useCallback(
@@ -271,18 +280,22 @@ function HomeInner() {
         });
         const updatedTask = updated.find((t) => t.id === taskId);
         if (updatedTask) {
+          // Note: updated_at and updated_by are handled by database trigger
           supabase
             .from("tasks")
-            .update({
-              checklist: updatedTask.checklist,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", taskId);
+            .update({ checklist: updatedTask.checklist })
+            .eq("id", taskId)
+            .then(({ error }) => {
+              if (error) {
+                console.error("Failed to add checklist item:", error.message);
+                showToast("Failed to add checklist item", "error");
+              }
+            });
         }
         return updated;
       });
     },
-    [supabase]
+    [supabase, showToast]
   );
 
   const handleUpdateTask = useCallback(
@@ -291,9 +304,10 @@ function HomeInner() {
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
       );
+      // Note: updated_at and updated_by are handled by database trigger
       const { error } = await supabase
         .from("tasks")
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updates)
         .eq("id", taskId);
       if (error) {
         console.error("Failed to update task:", error.message);

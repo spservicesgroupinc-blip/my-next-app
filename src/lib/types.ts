@@ -31,8 +31,8 @@ export interface Task {
   company_id: string;
   created_at: string;
   updated_at: string;
-  updated_by?: string | null;      // profile id of last editor
-  updated_by_name?: string | null; // denormalized name for audit display
+  updated_by: string | null;      // profile id of last editor
+  updated_by_name: string | null; // denormalized name for audit display
   // Joined fields (from profile joins)
   assignee?: Pick<Profile, "id" | "full_name">;
 }
