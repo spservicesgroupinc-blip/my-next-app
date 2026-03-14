@@ -18,10 +18,10 @@ interface WebhookPayload {
 }
 
 Deno.serve(async (req) => {
-  // Verify webhook secret
+  // Verify webhook secret — required; fail closed if not configured
   const authHeader = req.headers.get("Authorization");
   const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
-  if (webhookSecret && authHeader !== `Bearer ${webhookSecret}`) {
+  if (!webhookSecret || authHeader !== `Bearer ${webhookSecret}`) {
     return new Response("Unauthorized", { status: 401 });
   }
 

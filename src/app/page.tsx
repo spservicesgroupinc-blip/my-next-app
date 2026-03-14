@@ -196,7 +196,7 @@ function HomeInner() {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as TabId | null;
     if (tab && ["tasks", "timeclock", "chat", "calendar", "admin"].includes(tab)) {
-      setActiveTab(tab);
+      handleTabChange(tab);
     }
 
     // Return cleanup to unsubscribe on unmount / user change

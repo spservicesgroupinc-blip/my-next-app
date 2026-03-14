@@ -133,10 +133,13 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/';
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((windowClients) => {
-      for (const client of windowClients) {
-        if (client.url === url && 'focus' in client) return client.focus();
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // If app is already open in any window, navigate it to the target URL and focus it
+      if (windowClients.length > 0) {
+        const client = windowClients[0];
+        return client.navigate(url).then((c) => c && c.focus ? c.focus() : null);
       }
+      // Otherwise open a new window
       return self.clients.openWindow(url);
     })
   );

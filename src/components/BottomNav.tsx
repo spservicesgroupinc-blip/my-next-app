@@ -1,5 +1,6 @@
 "use client";
 
+import type { ElementType } from "react";
 import { ClipboardList, Clock, MessageCircle, CalendarDays, Shield, Plus } from "lucide-react";
 import { TabId } from "@/lib/types";
 
@@ -11,12 +12,12 @@ interface BottomNavProps {
   unreadChatCount?: number;
 }
 
-const leftTabs: { id: TabId; label: string; icon: React.ElementType }[] = [
+const leftTabs: { id: TabId; label: string; icon: ElementType }[] = [
   { id: "tasks", label: "Tasks", icon: ClipboardList },
   { id: "timeclock", label: "Clock", icon: Clock },
 ];
 
-const rightTabs: { id: TabId; label: string; icon: React.ElementType }[] = [
+const rightTabs: { id: TabId; label: string; icon: ElementType }[] = [
   { id: "chat", label: "Chat", icon: MessageCircle },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
 ];
@@ -26,7 +27,7 @@ const adminTab = { id: "admin" as TabId, label: "Admin", icon: Shield };
 export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, unreadChatCount = 0 }: BottomNavProps) {
   const right = isAdmin ? [...rightTabs, adminTab] : rightTabs;
 
-  const renderTab = (tab: { id: TabId; label: string; icon: React.ElementType }) => {
+  const renderTab = (tab: { id: TabId; label: string; icon: ElementType }) => {
     const Icon = tab.icon;
     const isActive = activeTab === tab.id;
     const isAdminTab = tab.id === "admin";
