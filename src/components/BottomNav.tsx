@@ -8,6 +8,7 @@ interface BottomNavProps {
   onTabChange: (tab: TabId) => void;
   onAddTask: () => void;
   isAdmin?: boolean;
+  unreadChatCount?: number;
 }
 
 const leftTabs: { id: TabId; label: string; icon: React.ElementType }[] = [
@@ -22,7 +23,7 @@ const rightTabs: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 const adminTab = { id: "admin" as TabId, label: "Admin", icon: Shield };
 
-export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin }: BottomNavProps) {
+export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, unreadChatCount = 0 }: BottomNavProps) {
   const right = isAdmin ? [...rightTabs, adminTab] : rightTabs;
 
   const renderTab = (tab: { id: TabId; label: string; icon: React.ElementType }) => {
@@ -30,6 +31,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin }
     const isActive = activeTab === tab.id;
     const isAdminTab = tab.id === "admin";
     const activeColor = isAdminTab ? "text-blue-600" : "text-orange-600";
+    const showBadge = tab.id === "chat" && unreadChatCount > 0;
     return (
       <button
         key={tab.id}
@@ -41,7 +43,14 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin }
         {isActive && (
           <span className="absolute top-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-current" />
         )}
-        <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+        <span className="relative">
+          <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+          {showBadge && (
+            <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white leading-none">
+              {unreadChatCount > 9 ? "9+" : unreadChatCount}
+            </span>
+          )}
+        </span>
         <span className={`text-[10px] leading-tight ${isActive ? "font-semibold" : "font-medium"}`}>
           {tab.label}
         </span>

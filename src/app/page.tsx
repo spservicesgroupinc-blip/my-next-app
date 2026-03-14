@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
@@ -20,6 +20,7 @@ import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePW
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { useLocationTracking } from "@/lib/useLocationTracking";
+import { usePushNotifications } from "@/lib/usePushNotifications";
 
 function HomeInner() {
   const router = useRouter();
@@ -37,6 +38,8 @@ function HomeInner() {
   const [installDismissed, setInstallDismissed] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataErrors, setDataErrors] = useState<{ tasks?: string; timeEntries?: string; chat?: string }>({});
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const activeTabRef = useRef<TabId>("tasks");
 
   const isOnline = useOnlineStatus();
   useServiceWorker();
@@ -49,6 +52,15 @@ function HomeInner() {
     (e) => e.user_id === user?.id && !e.clock_out
   );
   useLocationTracking(isClockedIn);
+
+  // Auto-subscribe to push notifications after login
+  usePushNotifications(user?.id);
+
+  const handleTabChange = useCallback((tab: TabId) => {
+    setActiveTab(tab);
+    activeTabRef.current = tab;
+    if (tab === "chat") setUnreadChatCount(0);
+  }, []);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -129,6 +141,7 @@ function HomeInner() {
             .single();
           if (data) {
             setChatMessages((prev) => [...prev, data as ChatMessage]);
+            setUnreadChatCount((prev) => (activeTabRef.current !== "chat" ? prev + 1 : 0));
           }
         }
       )
@@ -595,7 +608,7 @@ function HomeInner() {
         {activeTab === "admin" && isAdmin && <AdminView />}
       </main>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} onAddTask={() => setShowFabMenu(true)} isAdmin={isAdmin} />
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} onAddTask={() => setShowFabMenu(true)} isAdmin={isAdmin} unreadChatCount={unreadChatCount} />
 
       {/* FAB Slide-out Menu */}
       <FabMenu
