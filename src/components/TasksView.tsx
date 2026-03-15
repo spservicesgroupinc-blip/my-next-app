@@ -26,6 +26,7 @@ interface TasksViewProps {
   }) => void;
   isAdmin: boolean;
   showAddModal: boolean;
+  onOpenAddModal: () => void;
   onCloseAddModal: () => void;
 }
 
@@ -39,6 +40,7 @@ export default function TasksView({
   onAddTask,
   isAdmin,
   showAddModal,
+  onOpenAddModal,
   onCloseAddModal,
 }: TasksViewProps) {
   const { user, profile } = useAuth();
@@ -136,7 +138,7 @@ export default function TasksView({
             </button>
           </div>
           <button
-            onClick={onCloseAddModal}
+            onClick={onOpenAddModal}
             className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-orange-700"
           >
             <Plus className="h-4 w-4" />

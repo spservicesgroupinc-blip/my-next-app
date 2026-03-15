@@ -280,32 +280,27 @@ function HomeInner() {
 
   const handleToggleChecklist = useCallback(
     async (taskId: string, itemId: string) => {
-      setTasks((prev) => {
-        const updated = prev.map((t) => {
+      let newChecklist: ChecklistItem[] | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
           if (t.id !== taskId) return t;
-          return {
-            ...t,
-            checklist: t.checklist.map((c) =>
-              c.id === itemId ? { ...c, completed: !c.completed } : c
-            ),
-          };
-        });
-        const updatedTask = updated.find((t) => t.id === taskId);
-        if (updatedTask) {
-          // Note: updated_at and updated_by are handled by database trigger
-          supabase
-            .from("tasks")
-            .update({ checklist: updatedTask.checklist })
-            .eq("id", taskId)
-            .then(({ error }) => {
-              if (error) {
-                console.error("Failed to toggle checklist:", error.message);
-                showToast("Failed to update checklist", "error");
-              }
-            });
+          const updated = t.checklist.map((c) =>
+            c.id === itemId ? { ...c, completed: !c.completed } : c
+          );
+          newChecklist = updated;
+          return { ...t, checklist: updated };
+        })
+      );
+      if (newChecklist) {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ checklist: newChecklist })
+          .eq("id", taskId);
+        if (error) {
+          console.error("Failed to toggle checklist:", error.message);
+          showToast("Failed to update checklist", "error");
         }
-        return updated;
-      });
+      }
     },
     [supabase, showToast]
   );
@@ -317,27 +312,25 @@ function HomeInner() {
         text,
         completed: false,
       };
-      setTasks((prev) => {
-        const updated = prev.map((t) => {
+      let newChecklist: ChecklistItem[] | undefined;
+      setTasks((prev) =>
+        prev.map((t) => {
           if (t.id !== taskId) return t;
-          return { ...t, checklist: [...t.checklist, newItem] };
-        });
-        const updatedTask = updated.find((t) => t.id === taskId);
-        if (updatedTask) {
-          // Note: updated_at and updated_by are handled by database trigger
-          supabase
-            .from("tasks")
-            .update({ checklist: updatedTask.checklist })
-            .eq("id", taskId)
-            .then(({ error }) => {
-              if (error) {
-                console.error("Failed to add checklist item:", error.message);
-                showToast("Failed to add checklist item", "error");
-              }
-            });
+          const updated = [...t.checklist, newItem];
+          newChecklist = updated;
+          return { ...t, checklist: updated };
+        })
+      );
+      if (newChecklist) {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ checklist: newChecklist })
+          .eq("id", taskId);
+        if (error) {
+          console.error("Failed to add checklist item:", error.message);
+          showToast("Failed to add checklist item", "error");
         }
-        return updated;
-      });
+      }
     },
     [supabase, showToast]
   );
@@ -620,6 +613,7 @@ function HomeInner() {
             isAdmin={isAdmin}
             onAddTask={handleAddTask}
             showAddModal={showAddModal}
+            onOpenAddModal={() => setShowAddModal(true)}
             onCloseAddModal={() => setShowAddModal(false)}
           />
         )}
@@ -655,21 +649,7 @@ function HomeInner() {
         onSelectTime={() => setShowTimeEntryModal(true)}
       />
 
-      {/* Add Task Modal */}
-      {showAddModal && (
-        <TasksView
-          tasks={tasks}
-          onToggleComplete={handleToggleComplete}
-          onDelete={handleDeleteTask}
-          onToggleChecklist={handleToggleChecklist}
-          onAddLineItem={handleAddLineItem}
-          onUpdateTask={handleUpdateTask}
-          isAdmin={isAdmin}
-          onAddTask={handleAddTask}
-          showAddModal={showAddModal}
-          onCloseAddModal={() => setShowAddModal(false)}
-        />
-      )}
+
 
       {/* Manual Time Entry Modal */}
       {showTimeEntryModal && (
