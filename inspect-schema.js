@@ -1,7 +1,7 @@
 const https = require('https');
 
 const SUPABASE_URL = 'https://thwdaicnysqgjszcndkl.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = 'sbp_a39ed236527d5e529219fa1e8264b02bae9b8d16';
+const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRod2RhaWNueXNxZ2pzemNuZGtsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzMxMDMxMiwiZXhwIjoyMDg4ODg2MzEyfQ.CYZRHU08q0VNeJqwwiO2bWHjofNdKidT9De0HFcHA5Q';
 
 function executeSql(sql) {
   return new Promise((resolve, reject) => {

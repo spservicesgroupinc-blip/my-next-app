@@ -43,6 +43,12 @@ self.addEventListener('fetch', (event) => {
   // Skip chrome-extension and other non-http(s) requests
   if (!request.url.startsWith('http')) return;
 
+  // Skip cross-origin requests (Supabase API, external CDNs, etc.)
+  // These must always go directly to the network — caching them causes
+  // stale data to be served after updates, especially on iOS PWA.
+  const requestUrl = new URL(request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+
   // Navigation requests: network-first with offline fallback
   if (request.mode === 'navigate') {
     event.respondWith(

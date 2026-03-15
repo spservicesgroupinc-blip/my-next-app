@@ -46,6 +46,14 @@ export default function TasksView({
   const [view, setView] = useState<"list" | "kanban">("list");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // Keep selectedTask in sync when parent tasks array is updated
+  // (handles both optimistic updates and realtime subscription changes)
+  useEffect(() => {
+    if (!selectedTask) return;
+    const fresh = tasks.find((t) => t.id === selectedTask.id);
+    if (fresh) setSelectedTask(fresh);
+  }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Persist view mode to localStorage
   useEffect(() => {
     const saved = localStorage.getItem("tasksViewMode") as "list" | "kanban" | null;
