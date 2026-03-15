@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Trash2, Calendar, User, Briefcase, AlertTriangle,
-  Plus, Clock, CheckCircle2
+  Plus, Clock, CheckCircle2, Save, Download
 } from "lucide-react";
 import { Task, ChecklistItem, Profile, Job } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -50,10 +50,12 @@ export default function TaskDetailDrawer({
   const [newItemText, setNewItemText] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [localTask, setLocalTask] = useState<Task>(task);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Keep localTask in sync with parent (Realtime updates)
-  useEffect(() => { setLocalTask(task); }, [task]);
+  useEffect(() => { setLocalTask(task); setHasUnsavedChanges(false); }, [task]);
 
   useEffect(() => {
     async function fetchOptions() {
@@ -77,10 +79,38 @@ export default function TaskDetailDrawer({
   const completedCount = localTask.checklist.filter((c) => c.completed).length;
   const pct = localTask.checklist.length > 0 ? completedCount / localTask.checklist.length : 0;
 
+  // Deep compare checklist to detect unsaved changes
+  function checklistsEqual(a: ChecklistItem[], b: ChecklistItem[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((item, i) => 
+      item.id === b[i].id && item.text === b[i].text && item.completed === b[i].completed
+    );
+  }
+
   function save(updates: Partial<Task>) {
     const merged = { ...localTask, ...updates };
     setLocalTask(merged);
     onUpdate(task.id, updates);
+  }
+
+  function handleManualSave() {
+    // Force a sync to Supabase by re-sending current localTask state
+    const updates: Partial<Task> = {};
+    if (localTask.title !== task.title) updates.title = localTask.title;
+    if (localTask.assigned_to !== task.assigned_to) updates.assigned_to = localTask.assigned_to;
+    if (localTask.job_name !== task.job_name) updates.job_name = localTask.job_name;
+    if (localTask.priority !== task.priority) updates.priority = localTask.priority;
+    if (localTask.due_date !== task.due_date) updates.due_date = localTask.due_date;
+    if (localTask.status !== task.status) updates.status = localTask.status;
+    if (!checklistsEqual(localTask.checklist, task.checklist)) {
+      updates.checklist = localTask.checklist;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      setIsSaving(true);
+      onUpdate(task.id, updates);
+      setTimeout(() => setIsSaving(false), 500);
+    }
   }
 
   function handleToggleChecklist(itemId: string) {
@@ -170,6 +200,19 @@ export default function TaskDetailDrawer({
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0 mt-0.5">
+            <button
+              onClick={handleManualSave}
+              disabled={isSaving}
+              className={`p-2 rounded-lg transition-colors ${
+                isSaving
+                  ? "bg-orange-100 text-orange-600"
+                  : "text-slate-400 hover:text-orange-600 hover:bg-orange-50"
+              }`}
+              aria-label="Save changes"
+              title="Save changes to Supabase"
+            >
+              <Save className="h-4 w-4" />
+            </button>
             <button
               onClick={() => { onDelete(task.id); onClose(); }}
               className="p-2 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"

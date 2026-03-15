@@ -126,6 +126,25 @@ button, a, nav {
   }
 }
 
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -157,6 +176,10 @@ button, a, nav {
 
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 1.5s ease-out forwards;
 }
 
 .animate-fade-in-up {

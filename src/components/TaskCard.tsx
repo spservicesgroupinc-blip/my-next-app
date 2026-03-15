@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Plus,
   ChevronRight,
+  Save,
 } from "lucide-react";
 import { Task, ChecklistItem } from "@/lib/types";
 
@@ -30,6 +31,7 @@ export default function TaskCard({
 }: TaskCardProps) {
   const [newItemText, setNewItemText] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const completedCount = task.checklist.filter((c) => c.completed).length;
 
   const priorityBorderStyles: Record<string, string> = {
@@ -54,6 +56,18 @@ export default function TaskCard({
 
   const handleCardClick = () => {
     onOpen(task);
+  };
+
+  const handleToggleChecklistWithFeedback = (itemId: string) => {
+    onToggleChecklist(task.id, itemId);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1000);
+  };
+
+  const handleAddLineItemWithFeedback = (text: string) => {
+    onAddLineItem(task.id, text);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1000);
   };
 
   const isCompleted = task.status === "completed";
@@ -171,7 +185,7 @@ export default function TaskCard({
                   <input
                     type="checkbox"
                     checked={item.completed}
-                    onChange={() => onToggleChecklist(task.id, item.id)}
+                    onChange={() => handleToggleChecklistWithFeedback(item.id)}
                     className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 accent-orange-600"
                   />
                   <span
@@ -205,7 +219,7 @@ export default function TaskCard({
                 onChange={(e) => setNewItemText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && newItemText.trim()) {
-                    onAddLineItem(task.id, newItemText.trim());
+                    handleAddLineItemWithFeedback(newItemText.trim());
                     setNewItemText("");
                   }
                   if (e.key === "Escape") {
@@ -220,7 +234,7 @@ export default function TaskCard({
               <button
                 onClick={() => {
                   if (newItemText.trim()) {
-                    onAddLineItem(task.id, newItemText.trim());
+                    handleAddLineItemWithFeedback(newItemText.trim());
                     setNewItemText("");
                   }
                 }}
@@ -245,6 +259,14 @@ export default function TaskCard({
               <span>Add line item</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Save confirmation indicator */}
+      {justSaved && (
+        <div className="absolute top-2 right-2 flex items-center gap-1 bg-emerald-500 text-white px-2 py-1 rounded-md text-xs font-medium shadow-sm animate-fade-in-out">
+          <Save className="h-3 w-3" />
+          <span>Saved</span>
         </div>
       )}
     </div>
