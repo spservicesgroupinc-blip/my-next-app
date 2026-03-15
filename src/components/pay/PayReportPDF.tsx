@@ -192,10 +192,6 @@ export function PayReportPDF({ data }: PayReportPDFProps) {
         <View style={styles.headerSection}>
           <View style={styles.companyBlock}>
             <Text style={styles.companyName}>{company.name}</Text>
-            {company.address && <Text style={styles.companyMeta}>{company.address}</Text>}
-            {company.phone && <Text style={styles.companyMeta}>{company.phone}</Text>}
-            {company.email && <Text style={styles.companyMeta}>{company.email}</Text>}
-            {company.tax_id && <Text style={styles.companyMeta}>Tax ID: {company.tax_id}</Text>}
           </View>
           <View style={styles.reportTitleBlock}>
             <Text style={styles.reportTitle}>PAY REPORT</Text>
