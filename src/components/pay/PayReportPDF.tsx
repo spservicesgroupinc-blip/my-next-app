@@ -175,6 +175,11 @@ export function PayReportPDF({ data }: PayReportPDFProps) {
     doubletime_hours, gross_pay, generated_at,
   } = data;
 
+  // Compute from entries for accuracy across mixed rates
+  const regularPay = entries.reduce((sum, e) => sum + e.regular_hours * e.hourly_rate, 0);
+  const overtimePay = entries.reduce((sum, e) => sum + e.overtime_hours * e.hourly_rate * 1.5, 0);
+  const doubletimePay = entries.reduce((sum, e) => sum + e.doubletime_hours * e.hourly_rate * 2, 0);
+
   return (
     <Document
       title={`Pay Report — ${employee.full_name} — ${fmtDate(period_start)} to ${fmtDate(period_end)}`}
@@ -295,15 +300,15 @@ export function PayReportPDF({ data }: PayReportPDFProps) {
             <Text style={styles.summaryBoxTitle}>Pay Breakdown</Text>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Regular Pay</Text>
-              <Text style={styles.summaryValue}>{fmtPay(regular_hours * employee.hourly_rate)}</Text>
+              <Text style={styles.summaryValue}>{fmtPay(regularPay)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Overtime Pay</Text>
-              <Text style={styles.summaryValue}>{fmtPay(overtime_hours * employee.hourly_rate * 1.5)}</Text>
+              <Text style={styles.summaryValue}>{fmtPay(overtimePay)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Doubletime Pay</Text>
-              <Text style={styles.summaryValue}>{fmtPay(doubletime_hours * employee.hourly_rate * 2)}</Text>
+              <Text style={styles.summaryValue}>{fmtPay(doubletimePay)}</Text>
             </View>
             <View style={styles.summaryTotalRow}>
               <Text style={styles.summaryTotalLabel}>Gross Pay</Text>

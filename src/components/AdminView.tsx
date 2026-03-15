@@ -315,8 +315,28 @@ export default function AdminView() {
         else setConnectionStatus("connecting");
       });
 
+    const paySubChannel = supabase
+      .channel("pay-submissions-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pay_report_submissions" },
+        async (payload) => {
+          // Fetch with the employee join
+          const { data } = await supabase
+            .from("pay_report_submissions")
+            .select("*, employee:profiles!pay_report_submissions_employee_id_fkey(id, full_name)")
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setPaySubmissions((prev) => [data as PayReportSubmission, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(sub);
+      supabase.removeChannel(paySubChannel);
       clearInterval(tickInterval);
     };
     // Do NOT include `employees` in deps — use employeesRef.current inside handlers

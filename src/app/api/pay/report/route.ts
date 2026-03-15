@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
     .from("time_entries")
     .select("id, user_id, job_name, clock_in, clock_out, hourly_rate, notes, company_id, created_at")
     .eq("user_id", requestedEmployeeId)
+    // Note: clock_in values are stored as UTC (inserted via new Date().toISOString() on client).
+    // Date range boundaries use UTC 00:00–23:59. This is consistent with how entries are written.
     .gte("clock_in", `${start}T00:00:00.000Z`)
     .lte("clock_in", `${end}T23:59:59.999Z`)
     .not("clock_out", "is", null)
