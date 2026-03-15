@@ -156,6 +156,7 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
             onClick={handleSend}
             disabled={!input.trim()}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+            aria-label="Send message"
           >
             <Send className="h-5 w-5" />
           </button>

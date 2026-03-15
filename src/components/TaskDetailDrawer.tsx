@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Task, ChecklistItem, Profile, Job } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
+import ProgressRing from "@/components/ProgressRing";
 
 interface TaskDetailDrawerProps {
   task: Task;
@@ -24,28 +25,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   High: "text-amber-500 bg-amber-100",
   Critical: "text-red-600 bg-red-100",
 };
-
-function ProgressRing({ pct, size = 44 }: { pct: number; size?: number }) {
-  const r = (size - 6) / 2;
-  const circ = 2 * Math.PI * r;
-  return (
-    <svg width={size} height={size} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth="4" />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke={pct === 1 ? "#10b981" : "#f97316"} strokeWidth="4"
-        strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ transition: "stroke-dashoffset 0.4s ease" }}
-      />
-      <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize="10" fontWeight="600"
-        fill={pct === 1 ? "#10b981" : "#64748b"}>
-        {Math.round(pct * 100)}%
-      </text>
-    </svg>
-  );
-}
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -194,13 +173,14 @@ export default function TaskDetailDrawer({
             <button
               onClick={() => { onDelete(task.id); onClose(); }}
               className="p-2 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-              title="Delete task"
+              aria-label="Delete task"
             >
               <Trash2 className="h-4 w-4" />
             </button>
             <button
               onClick={onClose}
               className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label="Close"
             >
               <X className="h-5 w-5" />
             </button>
@@ -230,7 +210,7 @@ export default function TaskDetailDrawer({
                   {Icon && <Icon className="h-3.5 w-3.5" />}
                   <span className="hidden sm:inline">{opt.label}</span>
                   <span className="sm:hidden">
-                    {opt.label === "In Progress" ? "Active" : opt.label === "Done" ? "Done" : "Active"}
+                    {opt.label === "In Progress" ? "Progress" : opt.label}
                   </span>
                 </button>
               );
@@ -361,6 +341,7 @@ export default function TaskDetailDrawer({
                   <button
                     onClick={() => handleDeleteChecklistItem(item.id)}
                     className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-400 transition-all"
+                    aria-label="Remove checklist item"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -393,6 +374,7 @@ export default function TaskDetailDrawer({
                 <button
                   onClick={() => { setShowAddItem(false); setNewItemText(""); }}
                   className="rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600"
+                  aria-label="Cancel"
                 >
                   <X className="h-4 w-4" />
                 </button>

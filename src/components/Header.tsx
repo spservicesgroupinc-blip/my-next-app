@@ -63,6 +63,7 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
         <button
           onClick={() => setShowNotifications(true)}
           className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all active:scale-90"
+          aria-label="Notifications"
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
@@ -85,6 +86,7 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="flex items-center gap-1.5 active:scale-95 transition-all"
+            aria-label="User menu"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-800 text-xs font-bold text-white shadow-md">
               {userInitials}

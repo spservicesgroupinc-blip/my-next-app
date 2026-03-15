@@ -14,6 +14,7 @@ import TimeEntryModal from "@/components/TimeEntryModal";
 import JobsView from "@/components/JobsView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { TabId, Task, TimeEntry, ChatMessage, ChecklistItem, NotificationItem } from "@/lib/types";
 import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePWA";
@@ -40,6 +41,8 @@ function HomeInner() {
   const [dataErrors, setDataErrors] = useState<{ tasks?: string; timeEntries?: string; chat?: string }>({});
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [retryKey, setRetryKey] = useState(0);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const activeTabRef = useRef<TabId>("tasks");
 
   const addNotification = useCallback((item: Omit<NotificationItem, 'id' | 'read'>) => {
@@ -224,15 +227,11 @@ function HomeInner() {
       supabase.removeChannel(chatSub);
       supabase.removeChannel(taskSub);
     };
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Retry data loading
   const retryDataLoad = useCallback(() => {
-    setDataLoading(true);
-    setTimeout(() => {
-      // Trigger re-fetch by letting the effect run again
-      window.location.reload();
-    }, 100);
+    setRetryKey((k) => k + 1);
   }, []);
 
   // ── Task handlers ────────────────────────────────────────────────────────────
@@ -259,12 +258,21 @@ function HomeInner() {
   );
 
   const handleDeleteTask = useCallback(
-    async (taskId: string) => {
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      await supabase.from("tasks").delete().eq("id", taskId);
-      showToast("Task deleted", "info");
+    (taskId: string) => {
+      setTaskToDelete(taskId);
     },
-    [supabase, showToast]
+    []
+  );
+
+  const confirmDeleteTask = useCallback(
+    async () => {
+      if (!taskToDelete) return;
+      setTasks((prev) => prev.filter((t) => t.id !== taskToDelete));
+      await supabase.from("tasks").delete().eq("id", taskToDelete);
+      showToast("Task deleted", "info");
+      setTaskToDelete(null);
+    },
+    [taskToDelete, supabase, showToast]
   );
 
   const handleToggleChecklist = useCallback(
@@ -504,7 +512,7 @@ function HomeInner() {
 
   if (authLoading) {
     return (
-      <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-slate-50">
+      <div className="flex min-h-dvh items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-600 animate-pulse">
             <svg
@@ -533,7 +541,7 @@ function HomeInner() {
 
   if (allDataFailed && !dataLoading) {
     return (
-      <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-slate-50 p-4">
+      <div className="flex min-h-dvh items-center justify-center bg-slate-50 p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 mx-auto mb-4">
             <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -565,7 +573,7 @@ function HomeInner() {
     : "?";
 
   return (
-    <div className="flex h-screen h-[100dvh] flex-col bg-slate-50">
+    <div className="flex h-dvh flex-col bg-slate-50">
       {!isOnline && <OfflineBanner />}
 
       {/* Data error banner for partial failures */}
@@ -694,6 +702,15 @@ function HomeInner() {
 
       {canInstall && !installDismissed && (
         <InstallBanner onInstall={handleInstall} onDismiss={handleDismissInstall} />
+      )}
+
+      {taskToDelete && (
+        <ConfirmDialog
+          title="Delete Task"
+          description="This task and all its checklist items will be permanently deleted."
+          onConfirm={confirmDeleteTask}
+          onCancel={() => setTaskToDelete(null)}
+        />
       )}
     </div>
   );

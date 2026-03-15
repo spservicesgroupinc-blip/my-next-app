@@ -37,6 +37,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
       <button
         onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
         className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-all active:scale-90"
+        aria-label="Previous month"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -46,6 +47,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
       <button
         onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
         className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-all active:scale-90"
+        aria-label="Next month"
       >
         <ChevronRight className="h-5 w-5" />
       </button>

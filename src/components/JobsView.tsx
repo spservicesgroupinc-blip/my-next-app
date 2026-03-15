@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Briefcase, Plus, Trash2, Edit2, CheckCircle2, XCircle, DollarSign, Clock } from "lucide-react";
 import { Job, TimeEntry } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface JobsViewProps {
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
   const [addingJob, setAddingJob] = useState(false);
   const [jobTimeEntries, setJobTimeEntries] = useState<Record<string, TimeEntry[]>>({});
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -79,17 +81,17 @@ export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
     }
   }
 
-  async function deleteJob(job: Job) {
-    if (!confirm(`Are you sure you want to delete "${job.name}"?`)) return;
-    
+  async function confirmDeleteJob() {
+    if (!jobToDelete) return;
     const { error } = await supabase
       .from("jobs")
       .delete()
-      .eq("id", job.id);
+      .eq("id", jobToDelete.id);
     
     if (!error) {
       fetchJobs();
     }
+    setJobToDelete(null);
   }
 
   function calculateTotalHours(entries: TimeEntry[]): number {
@@ -223,7 +225,7 @@ export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
                         onClose();
                       }}
                       className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
-                      title="Select for time entry"
+                      aria-label="Select for time entry"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                     </button>
@@ -234,7 +236,7 @@ export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
                           ? "bg-slate-100 text-slate-500 hover:bg-slate-200"
                           : "bg-emerald-100 text-emerald-600 hover:bg-emerald-200"
                       }`}
-                      title={job.is_active ? "Deactivate" : "Activate"}
+                      aria-label={job.is_active ? "Deactivate" : "Activate"}
                     >
                       {job.is_active ? (
                         <Edit2 className="h-4 w-4" />
@@ -243,9 +245,9 @@ export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
                       )}
                     </button>
                     <button
-                      onClick={() => deleteJob(job)}
+                      onClick={() => setJobToDelete(job)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                      title="Delete job"
+                      aria-label="Delete job"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -290,6 +292,16 @@ export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
             );
           })}
         </div>
+      )}
+
+      {jobToDelete && (
+        <ConfirmDialog
+          title="Delete Job"
+          description={`Are you sure you want to delete "${jobToDelete.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDeleteJob}
+          onCancel={() => setJobToDelete(null)}
+        />
       )}
     </div>
   );

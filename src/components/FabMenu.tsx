@@ -106,18 +106,7 @@ export default function FabMenu({ isOpen, onClose, onSelectTask, onSelectJob, on
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+
     </>
   );
 }

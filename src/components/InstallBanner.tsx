@@ -27,6 +27,7 @@ export default function InstallBanner({ onInstall, onDismiss }: InstallBannerPro
         <button
           onClick={onDismiss}
           className="shrink-0 p-2 text-slate-500 hover:text-slate-300"
+          aria-label="Dismiss"
         >
           <X className="h-4 w-4" />
         </button>

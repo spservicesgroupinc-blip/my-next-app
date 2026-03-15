@@ -56,7 +56,6 @@ export default function TaskCard({
     onOpen(task);
   };
 
-  const inProgress = task.status === "in_progress";
   const isCompleted = task.status === "completed";
 
   const statusConfig = {
@@ -71,8 +70,7 @@ export default function TaskCard({
       className={`group relative rounded-xl bg-white p-3.5 shadow-sm border border-slate-100 
         transition-all duration-200 cursor-pointer active:scale-[0.98]
         border-l-4 ${priorityBorderStyles[task.priority]}
-        ${isCompleted ? "opacity-50 bg-slate-50" : "hover:shadow-md hover:border-l-orange-500"}
-        ${inProgress ? "shimmer-pulse" : ""}`}
+        ${isCompleted ? "opacity-50 bg-slate-50" : "hover:shadow-md hover:border-l-orange-500"}`}
     >
       {/* Header: status + actions */}
       <div className="flex items-center justify-between mb-2">
@@ -98,14 +96,14 @@ export default function TaskCard({
                 ? "text-emerald-500 bg-emerald-50 hover:bg-emerald-100"
                 : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"
             }`}
-            title={isCompleted ? "Mark active" : "Mark complete"}
+            aria-label={isCompleted ? "Mark active" : "Mark complete"}
           >
             <CheckCircle2 className="h-5 w-5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors active:scale-90"
-            title="Delete task"
+            aria-label="Delete task"
           >
             <Trash2 className="h-4 w-4" />
           </button>

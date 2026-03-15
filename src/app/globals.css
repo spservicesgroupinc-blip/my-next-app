@@ -181,11 +181,6 @@ button, a, nav {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent iOS rubber-banding on fixed elements */
-.fixed {
-  -webkit-transform: translateZ(0);
-}
-
 /* Input styling for mobile */
 input, select, textarea {
   font-size: 16px !important; /* Prevent iOS zoom on focus */

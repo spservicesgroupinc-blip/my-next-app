@@ -158,7 +158,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-900">New Task</h2>
-          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -221,6 +221,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                 onClick={addLineItem}
                 disabled={!newLineItem.trim()}
                 className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-orange-100 hover:text-orange-600 disabled:opacity-30 transition-all active:scale-95"
+                aria-label="Add line item"
               >
                 <Plus className="h-5 w-5" />
               </button>

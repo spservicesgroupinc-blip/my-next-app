@@ -23,6 +23,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
 import LiveMapView from "@/components/LiveMapView";
+import ProgressRing from "@/components/ProgressRing";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import dynamic from "next/dynamic";
 const PayrollTab = dynamic(() => import("@/components/payroll/PayrollTab"), { ssr: false });
 
@@ -42,31 +44,6 @@ interface ActivityEvent {
   jobName?: string;
   timestamp: string;
 }
-
-// ── Progress Ring Component ───────────────────────────────────────────────────
-function ProgressRing({ pct, size = 48 }: { pct: number; size?: number }) {
-  const r = (size - 6) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - pct);
-  return (
-    <svg width={size} height={size} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth="4" />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke={pct === 1 ? "#10b981" : "#f97316"} strokeWidth="4"
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ transition: "stroke-dashoffset 0.4s ease" }}
-      />
-      <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize="10" fontWeight="600"
-        fill={pct === 1 ? "#10b981" : "#64748b"}>
-        {Math.round(pct * 100)}%
-      </text>
-    </svg>
-  );
-}
-
 
 export default function AdminView() {
   const supabase = createClient();
@@ -106,6 +83,7 @@ export default function AdminView() {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [newJobName, setNewJobName] = useState("");
   const [addingJob, setAddingJob] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
   const loadEmployees = useCallback(async () => {
     setIsLoading(true);
@@ -437,9 +415,15 @@ export default function AdminView() {
   }
 
   // ── Delete job ────────────────────────────────────────────────────────────
-  async function handleDeleteJob(jobId: string) {
-    await supabase.from("jobs").delete().eq("id", jobId);
-    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+  function handleDeleteJob(jobId: string) {
+    setJobToDelete(jobId);
+  }
+
+  async function confirmDeleteJob() {
+    if (!jobToDelete) return;
+    await supabase.from("jobs").delete().eq("id", jobToDelete);
+    setJobs((prev) => prev.filter((j) => j.id !== jobToDelete));
+    setJobToDelete(null);
   }
 
   const formatTime = (iso: string) =>
@@ -910,6 +894,7 @@ export default function AdminView() {
                     <button
                       onClick={() => handleDeleteJob(job.id)}
                       className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                      aria-label="Delete job"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -941,7 +926,8 @@ export default function AdminView() {
               <h2 className="text-lg font-bold text-slate-900">Add Employee</h2>
               <button
                 onClick={() => setShowAddEmployee(false)}
-                className="p-1 text-slate-400 hover:text-slate-600"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                aria-label="Close"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1036,7 +1022,8 @@ export default function AdminView() {
               <h2 className="text-lg font-bold text-slate-900">Edit Employee</h2>
               <button
                 onClick={() => setEditEmployee(null)}
-                className="p-1 text-slate-400 hover:text-slate-600"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                aria-label="Close"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1157,6 +1144,15 @@ export default function AdminView() {
             </form>
           </div>
         </div>
+      )}
+
+      {jobToDelete && (
+        <ConfirmDialog
+          title="Delete Job"
+          description="This job will be permanently deleted. Time entries linked to this job will not be affected."
+          onConfirm={confirmDeleteJob}
+          onCancel={() => setJobToDelete(null)}
+        />
       )}
     </div>
   );
