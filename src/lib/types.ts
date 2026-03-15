@@ -81,3 +81,13 @@ export interface EmployeeLocation {
 
 // ─── UI ───────────────────────────────────────────────────────────────────────
 export type TabId = "tasks" | "timeclock" | "chat" | "calendar" | "admin";
+
+// ─── Notification ─────────────────────────────────────────────────────────────
+export interface NotificationItem {
+  id: string;
+  type: "clock_in" | "clock_out" | "task_insert" | "task_update" | "message";
+  title: string;
+  body: string;
+  timestamp: string;
+  read: boolean;
+}

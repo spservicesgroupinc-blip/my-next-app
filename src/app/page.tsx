@@ -15,7 +15,7 @@ import JobsView from "@/components/JobsView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
 import { ToastProvider, useToast } from "@/components/Toast";
-import { TabId, Task, TimeEntry, ChatMessage, ChecklistItem } from "@/lib/types";
+import { TabId, Task, TimeEntry, ChatMessage, ChecklistItem, NotificationItem } from "@/lib/types";
 import { useServiceWorker, useOnlineStatus, useInstallPrompt } from "@/lib/usePWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
@@ -39,7 +39,19 @@ function HomeInner() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataErrors, setDataErrors] = useState<{ tasks?: string; timeEntries?: string; chat?: string }>({});
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const activeTabRef = useRef<TabId>("tasks");
+
+  const addNotification = useCallback((item: Omit<NotificationItem, 'id' | 'read'>) => {
+    setNotifications((prev) => [
+      { ...item, id: crypto.randomUUID(), read: false },
+      ...prev.slice(0, 49),
+    ]);
+  }, []);
+
+  const markAllRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, []);
 
   const isOnline = useOnlineStatus();
   useServiceWorker();
@@ -142,6 +154,14 @@ function HomeInner() {
           if (data) {
             setChatMessages((prev) => [...prev, data as ChatMessage]);
             setUnreadChatCount((prev) => (activeTabRef.current !== "chat" ? prev + 1 : 0));
+            if (activeTabRef.current !== "chat") {
+              addNotification({
+                type: "message",
+                title: `New message from ${(data as ChatMessage).sender?.full_name ?? "Someone"}`,
+                body: (data as ChatMessage).text.slice(0, 80),
+                timestamp: new Date().toISOString(),
+              });
+            }
           }
         }
       )
@@ -568,6 +588,8 @@ function HomeInner() {
       <Header
         activeTab={activeTab}
         userInitials={userInitials}
+        notifications={notifications}
+        onMarkAllRead={markAllRead}
       />
 
       <main
