@@ -93,3 +93,57 @@ export interface NotificationItem {
   timestamp: string;
   read: boolean;
 }
+
+// ─── Company (matches public.companies) ───────────────────────────────────────
+export interface Company {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  tax_id: string | null;
+  created_at: string;
+}
+
+// ─── TimeEntryWithHours — time entry enriched with calculated hour breakdown ──
+export interface TimeEntryWithHours extends TimeEntry {
+  duration_hours: number;
+  regular_hours: number;
+  overtime_hours: number;
+  doubletime_hours: number;
+  entry_pay: number;
+}
+
+// ─── PayReportData — full data needed to render the PDF ───────────────────────
+export interface PayReportData {
+  employee: Profile;
+  company: Company;
+  period_start: string;    // YYYY-MM-DD
+  period_end: string;      // YYYY-MM-DD
+  entries: TimeEntryWithHours[];
+  total_hours: number;
+  regular_hours: number;
+  overtime_hours: number;
+  doubletime_hours: number;
+  gross_pay: number;
+  generated_at: string;    // ISO timestamp
+}
+
+// ─── PayReportSubmission (matches public.pay_report_submissions) ───────────────
+export interface PayReportSubmission {
+  id: string;
+  employee_id: string;
+  company_id: string;
+  period_start: string;
+  period_end: string;
+  total_hours: number;
+  gross_pay: number;
+  status: "submitted" | "reviewed" | "approved";
+  notes: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  // Joined fields
+  employee?: Pick<Profile, "id" | "full_name">;
+}
