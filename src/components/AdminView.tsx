@@ -18,14 +18,20 @@ import {
   Activity,
   UserCheck,
   CircleDot,
+  FileText,
+  CheckCircle,
+  Eye,
 } from "lucide-react";
+import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
+import type { PayReportSubmission } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
 import LiveMapView from "@/components/LiveMapView";
 import ProgressRing from "@/components/ProgressRing";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-type AdminTab = "live" | "employees" | "jobs" | "map";
+type AdminTab = "live" | "employees" | "jobs" | "map" | "payreports";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
@@ -44,6 +50,7 @@ interface ActivityEvent {
 
 export default function AdminView() {
   const supabase = createClient();
+  const { user } = useAuth();
   const [adminTab, setAdminTab] = useState<AdminTab>("live");
   const [employees, setEmployees] = useState<EmployeeWithStatus[]>([]);
   const employeesRef = useRef<EmployeeWithStatus[]>([]);
@@ -81,6 +88,10 @@ export default function AdminView() {
   const [newJobName, setNewJobName] = useState("");
   const [addingJob, setAddingJob] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+
+  // ── Pay Submissions state ─────────────────────────────────────────────────
+  const [paySubmissions, setPaySubmissions] = useState<PayReportSubmission[]>([]);
+  const [paySubsLoading, setPaySubsLoading] = useState(true);
 
   const loadEmployees = useCallback(async () => {
     setIsLoading(true);
@@ -129,6 +140,33 @@ export default function AdminView() {
     setJobs(data ?? []);
     setJobsLoading(false);
   }, [supabase]);
+
+  useEffect(() => {
+    async function loadSubmissions() {
+      setPaySubsLoading(true);
+      const { data, error } = await supabase
+        .from("pay_report_submissions")
+        .select("*, employee:profiles!pay_report_submissions_employee_id_fkey(id, full_name)")
+        .order("submitted_at", { ascending: false });
+      if (!error && data) {
+        setPaySubmissions(data as PayReportSubmission[]);
+      }
+      setPaySubsLoading(false);
+    }
+    loadSubmissions();
+  }, [supabase]);
+
+  const handleUpdateSubmissionStatus = useCallback(async (id: string, status: "reviewed" | "approved") => {
+    const { error } = await supabase
+      .from("pay_report_submissions")
+      .update({ status, reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq("id", id);
+    if (!error) {
+      setPaySubmissions((prev) =>
+        prev.map((s) => s.id === id ? { ...s, status, reviewed_at: new Date().toISOString(), reviewed_by: user?.id ?? null } : s)
+      );
+    }
+  }, [supabase, user?.id]);
 
   useEffect(() => {
     loadEmployees();
@@ -493,6 +531,17 @@ export default function AdminView() {
           >
             <MapPin className="h-3.5 w-3.5" />
             Map
+          </button>
+          <button
+            onClick={() => setAdminTab("payreports")}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
+              adminTab === "payreports"
+                ? "bg-white text-orange-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Pay
           </button>
         </div>
       </div>
@@ -894,6 +943,94 @@ export default function AdminView() {
 
       {/* ── MAP VIEW ────────────────────────────────────────────────────────── */}
       {adminTab === "map" && <LiveMapView />}
+
+      {/* ── PAY REPORTS TAB ──────────────────────────────────────────────────── */}
+      {adminTab === "payreports" && (
+        <div className="flex flex-col gap-3 p-4 overflow-y-auto">
+          {/* Pay Submissions Section */}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-orange-500" />
+                <h3 className="text-sm font-semibold text-slate-900">Pay Report Submissions</h3>
+              </div>
+              {paySubmissions.length > 0 && (
+                <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700">
+                  {paySubmissions.filter((s) => s.status === "submitted").length} pending
+                </span>
+              )}
+            </div>
+
+            {paySubsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+              </div>
+            ) : paySubmissions.length === 0 ? (
+              <div className="py-10 text-center">
+                <FileText className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">No pay reports submitted yet</p>
+                <p className="text-xs text-slate-400 mt-1">Employees can submit reports from the Time Clock tab</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {paySubmissions.map((submission) => (
+                  <div key={submission.id} className="flex items-center justify-between px-4 py-3 gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {submission.employee?.full_name ?? "Unknown Employee"}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          submission.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : submission.status === "reviewed"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}>
+                          {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {format(new Date(submission.period_start), "MMM d")} – {format(new Date(submission.period_end), "MMM d, yyyy")}
+                        {" · "}{submission.total_hours.toFixed(2)} hrs · ${submission.gross_pay.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        Submitted {format(new Date(submission.submitted_at), "MMM d, yyyy 'at' h:mm a")}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      {submission.status === "submitted" && (
+                        <button
+                          onClick={() => handleUpdateSubmissionStatus(submission.id, "reviewed")}
+                          className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Review
+                        </button>
+                      )}
+                      {(submission.status === "submitted" || submission.status === "reviewed") && (
+                        <button
+                          onClick={() => handleUpdateSubmissionStatus(submission.id, "approved")}
+                          className="flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Approve
+                        </button>
+                      )}
+                      {submission.status === "approved" && (
+                        <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Approved
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── ADD EMPLOYEE MODAL ───────────────────────────────────────────────── */}
       {showAddEmployee && (
