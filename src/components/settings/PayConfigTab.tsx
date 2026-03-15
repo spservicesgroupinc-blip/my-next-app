@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Save } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PayConfig {
   dailyOtThreshold: number;
@@ -22,23 +24,57 @@ const DEFAULTS: PayConfig = {
 };
 
 export default function PayConfigTab() {
+  const { profile } = useAuth();
+  const supabase = createClient();
   const [config, setConfig] = useState<PayConfig>(DEFAULTS);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("protask_pay_config");
-      if (stored) setConfig(JSON.parse(stored));
-    } catch {}
-  }, []);
+    if (!profile?.company_id) return;
+
+    supabase
+      .from("pay_config")
+      .select("*")
+      .eq("company_id", profile.company_id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setConfig({
+            dailyOtThreshold: Number(data.daily_ot_threshold),
+            weeklyOtThreshold: Number(data.weekly_ot_threshold),
+            otMultiplier: Number(data.ot_multiplier),
+            dtMultiplier: Number(data.dt_multiplier),
+            federalTaxRate: Number(data.federal_tax_rate),
+            stateTaxRate: Number(data.state_tax_rate),
+          });
+        }
+        setLoading(false);
+      });
+  }, [profile?.company_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(key: keyof PayConfig, value: string) {
     setConfig((prev) => ({ ...prev, [key]: parseFloat(value) || 0 }));
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    localStorage.setItem("protask_pay_config", JSON.stringify(config));
+    if (!profile?.company_id) return;
+
+    await supabase.from("pay_config").upsert(
+      {
+        company_id: profile.company_id,
+        daily_ot_threshold: config.dailyOtThreshold,
+        weekly_ot_threshold: config.weeklyOtThreshold,
+        ot_multiplier: config.otMultiplier,
+        dt_multiplier: config.dtMultiplier,
+        federal_tax_rate: config.federalTaxRate,
+        state_tax_rate: config.stateTaxRate,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "company_id" }
+    );
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -86,6 +122,19 @@ export default function PayConfigTab() {
       step: "0.5",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="h-4 w-32 animate-pulse rounded bg-slate-200 mb-4" />
+        <div className="space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-10 animate-pulse rounded-xl bg-slate-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">

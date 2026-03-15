@@ -45,6 +45,7 @@ export interface TimeEntry {
   clock_in: string;
   clock_out: string | null;
   hourly_rate: number;
+  notes: string | null;
   company_id: string;
   created_at: string;
 }
@@ -66,6 +67,7 @@ export interface Job {
   id: string;
   name: string;
   is_active: boolean;
+  company_id: string;
   created_at: string;
 }
 

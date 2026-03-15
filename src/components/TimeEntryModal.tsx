@@ -13,6 +13,7 @@ interface TimeEntryModalProps {
     clock_out: string;
     hours: number;
     hourly_rate: number;
+    notes: string;
   }) => void;
 }
 
@@ -106,6 +107,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
       clock_out: clockOut,
       hours,
       hourly_rate: parseFloat(hourlyRate) || 25,
+      notes,
     });
   }
 

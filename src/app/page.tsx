@@ -448,6 +448,7 @@ function HomeInner() {
       clock_out: string;
       hours: number;
       hourly_rate: number;
+      notes: string;
     }) => {
       if (!user || !profile) return;
       const { data, error } = await supabase
@@ -458,6 +459,7 @@ function HomeInner() {
           clock_in: entry.clock_in,
           clock_out: entry.clock_out,
           hourly_rate: entry.hourly_rate,
+          notes: entry.notes || null,
           company_id: profile.company_id,
         })
         .select()

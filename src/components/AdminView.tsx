@@ -24,10 +24,8 @@ import { Profile, Task, TimeEntry, Job } from "@/lib/types";
 import LiveMapView from "@/components/LiveMapView";
 import ProgressRing from "@/components/ProgressRing";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import dynamic from "next/dynamic";
-const PayrollTab = dynamic(() => import("@/components/payroll/PayrollTab"), { ssr: false });
 
-type AdminTab = "live" | "employees" | "jobs" | "map" | "payroll";
+type AdminTab = "live" | "employees" | "jobs" | "map";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;

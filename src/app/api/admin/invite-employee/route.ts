@@ -49,13 +49,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Update the auto-created profile with name and hourly_rate
+  // Update the auto-created profile with name, rate, and correct company
   if (data?.user?.id) {
     await adminClient
       .from("profiles")
       .update({
         full_name,
         hourly_rate: hourly_rate ?? 0,
+        company_id: profile.company_id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.user.id);
