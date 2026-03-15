@@ -80,20 +80,65 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: entriesError.message }, { status: 500 });
   }
 
-  // Enrich entries with calculated hours
-  const entries: TimeEntryWithHours[] = (rawEntries ?? []).map((entry) => {
-    const duration_hours = parseDurationHours(entry.clock_in, entry.clock_out);
-    const breakdown = calculateHoursBreakdown(duration_hours);
-    const entry_pay = computeEntryPay(breakdown, entry.hourly_rate);
-    return {
-      ...entry,
-      duration_hours,
-      regular_hours: breakdown.regular,
-      overtime_hours: breakdown.overtime,
-      doubletime_hours: breakdown.doubletime,
-      entry_pay,
-    };
-  });
+  // Group entries by calendar date (using clock_in UTC date)
+  const entriesByDate = new Map<string, typeof rawEntries>();
+  for (const entry of rawEntries ?? []) {
+    const dateKey = entry.clock_in.slice(0, 10); // YYYY-MM-DD from ISO string
+    if (!entriesByDate.has(dateKey)) entriesByDate.set(dateKey, []);
+    entriesByDate.get(dateKey)!.push(entry);
+  }
+
+  // For each date, compute daily total hours, then split OT across entries proportionally
+  const entries: TimeEntryWithHours[] = [];
+
+  for (const [, dayEntries] of entriesByDate) {
+    // Sum all entry durations for this date
+    const dayTotalHours = dayEntries.reduce((sum, e) => {
+      return sum + parseDurationHours(e.clock_in, e.clock_out);
+    }, 0);
+
+    // Get the daily breakdown (0-8 regular, 8-12 OT, 12+ DT)
+    const dayBreakdown = calculateHoursBreakdown(dayTotalHours);
+
+    // Distribute the OT/DT proportionally across entries by their weight in the day
+    let remainingRegular = dayBreakdown.regular;
+    let remainingOvertime = dayBreakdown.overtime;
+    let remainingDoubletime = dayBreakdown.doubletime;
+
+    for (const entry of dayEntries) {
+      const duration_hours = parseDurationHours(entry.clock_in, entry.clock_out);
+
+      // Allocate hours to this entry from the daily pool
+      const entryRegular = Math.min(duration_hours, remainingRegular);
+      remainingRegular -= entryRegular;
+
+      const afterRegular = duration_hours - entryRegular;
+      const entryOvertime = Math.min(afterRegular, remainingOvertime);
+      remainingOvertime -= entryOvertime;
+
+      const afterOT = afterRegular - entryOvertime;
+      const entryDoubletime = Math.min(afterOT, remainingDoubletime);
+      remainingDoubletime -= entryDoubletime;
+
+      const entryRegularRounded = Math.round(entryRegular * 100) / 100;
+      const entryOvertimeRounded = Math.round(entryOvertime * 100) / 100;
+      const entryDTRounded = Math.round(entryDoubletime * 100) / 100;
+
+      const entry_pay = computeEntryPay(
+        { regular: entryRegularRounded, overtime: entryOvertimeRounded, doubletime: entryDTRounded },
+        entry.hourly_rate
+      );
+
+      entries.push({
+        ...entry,
+        duration_hours: Math.round(duration_hours * 100) / 100,
+        regular_hours: entryRegularRounded,
+        overtime_hours: entryOvertimeRounded,
+        doubletime_hours: entryDTRounded,
+        entry_pay,
+      });
+    }
+  }
 
   // Sum totals
   const total_hours = entries.reduce((sum, e) => sum + e.duration_hours, 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from "date-fns";
 import { X, Download, Send, Calendar, Clock, DollarSign, FileText, Loader2, CheckCircle } from "lucide-react";
@@ -63,8 +63,8 @@ interface PayReportModalProps {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function PayReportModal({ onClose, targetEmployeeId, targetEmployeeName }: PayReportModalProps) {
   const { user, profile } = useAuth();
-  const supabase = createClient();
-  const presets = getPresets();
+  const supabase = useMemo(() => createClient(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const presets = useMemo(() => getPresets(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [startDate, setStartDate] = useState(presets[1].start);
   const [endDate, setEndDate] = useState(presets[1].end);
@@ -113,11 +113,13 @@ export default function PayReportModal({ onClose, targetEmployeeId, targetEmploy
   }, [targetEmployeeId, user?.id]);
 
   useEffect(() => {
-    fetchReport(startDate, endDate);
+    if (startDate.length === 10 && endDate.length === 10 && startDate <= endDate) {
+      fetchReport(startDate, endDate);
+    }
   }, [startDate, endDate, fetchReport]);
 
   const handleSubmit = useCallback(async () => {
-    if (!reportData || !profile) return;
+    if (!reportData || !profile || !user) return;
     setSubmitStatus("submitting");
     setSubmitError(null);
 
@@ -144,6 +146,11 @@ export default function PayReportModal({ onClose, targetEmployeeId, targetEmploy
   const pdfFilename = reportData
     ? `pay-report-${reportData.employee.full_name.replace(/\s+/g, "-").toLowerCase()}-${startDate}-to-${endDate}.pdf`
     : "pay-report.pdf";
+
+  const pdfDocument = useMemo(
+    () => (reportData ? <PayReportPDFComponent data={reportData} /> : null),
+    [reportData]
+  );
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-white">
@@ -347,8 +354,9 @@ export default function PayReportModal({ onClose, targetEmployeeId, targetEmploy
           className="border-t border-slate-100 bg-white px-4 py-4 flex flex-col gap-2 flex-shrink-0"
           style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
         >
+          {pdfDocument && (
           <PDFDownloadLink
-            document={<PayReportPDFComponent data={reportData} />}
+            document={pdfDocument}
             fileName={pdfFilename}
             className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors no-underline"
           >
@@ -366,6 +374,7 @@ export default function PayReportModal({ onClose, targetEmployeeId, targetEmploy
               )
             }
           </PDFDownloadLink>
+          )}
 
           <button
             onClick={handleSubmit}

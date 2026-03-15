@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Users,
   Clock,
@@ -49,7 +49,7 @@ interface ActivityEvent {
 }
 
 export default function AdminView() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []); // eslint-disable-line react-hooks/exhaustive-deps
   const { user } = useAuth();
   const [adminTab, setAdminTab] = useState<AdminTab>("live");
   const [employees, setEmployees] = useState<EmployeeWithStatus[]>([]);
