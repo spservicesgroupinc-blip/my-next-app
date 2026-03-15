@@ -18,15 +18,11 @@ import {
   Activity,
   UserCheck,
   CircleDot,
-  DollarSign,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
 import LiveMapView from "@/components/LiveMapView";
-import dynamic from "next/dynamic";
-const PayrollTab = dynamic(() => import("@/components/payroll/PayrollTab"), { ssr: false });
-
-type AdminTab = "live" | "employees" | "jobs" | "map" | "payroll";
+type AdminTab = "live" | "employees" | "jobs" | "map";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
@@ -513,17 +509,6 @@ export default function AdminView() {
             <MapPin className="h-3.5 w-3.5" />
             Map
           </button>
-          <button
-            onClick={() => setAdminTab("payroll")}
-            className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
-              adminTab === "payroll"
-                ? "bg-orange-600 text-white shadow-sm"
-                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-            }`}
-          >
-            <DollarSign className="h-4 w-4" />
-            Payroll
-          </button>
         </div>
       </div>
 
@@ -923,9 +908,6 @@ export default function AdminView() {
 
       {/* ── MAP VIEW ────────────────────────────────────────────────────────── */}
       {adminTab === "map" && <LiveMapView />}
-
-      {/* ── PAYROLL TAB ─────────────────────────────────────────────────────── */}
-      {adminTab === "payroll" && <PayrollTab />}
 
       {/* ── ADD EMPLOYEE MODAL ───────────────────────────────────────────────── */}
       {showAddEmployee && (
