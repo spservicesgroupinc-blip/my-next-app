@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Play, Square, DollarSign, Briefcase, Clock } from "lucide-react";
+import { Play, Square, DollarSign, Briefcase, Clock, FileText } from "lucide-react";
 import { TimeEntry } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -9,12 +9,14 @@ interface TimeClockViewProps {
   timeEntries: TimeEntry[];
   onClockIn: (jobName: string) => void;
   onClockOut: (entryId: string) => void;
+  onOpenPayReport: () => void;
 }
 
 export default function TimeClockView({
   timeEntries,
   onClockIn,
   onClockOut,
+  onOpenPayReport,
 }: TimeClockViewProps) {
   const supabase = createClient();
   const [jobNames, setJobNames] = useState<string[]>([]);
@@ -92,6 +94,18 @@ export default function TimeClockView({
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
+      {/* View header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold text-slate-900">Time Clock</h2>
+        <button
+          onClick={onOpenPayReport}
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:border-orange-300 hover:text-orange-700 transition-colors"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          Pay Report
+        </button>
+      </div>
+
       {/* Status Card */}
       <div className={`rounded-2xl p-5 shadow-sm ${activeShift ? "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200" : "bg-white border border-slate-100"}`}>
         <div className="flex items-center gap-2 mb-3">

@@ -11,6 +11,7 @@ import CalendarView from "@/components/CalendarView";
 import AdminView from "@/components/AdminView";
 import FabMenu from "@/components/FabMenu";
 import TimeEntryModal from "@/components/TimeEntryModal";
+import PayReportModal from "@/components/pay/PayReportModal";
 import JobsView from "@/components/JobsView";
 import InstallBanner from "@/components/InstallBanner";
 import OfflineBanner from "@/components/OfflineBanner";
@@ -35,6 +36,7 @@ function HomeInner() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [showTimeEntryModal, setShowTimeEntryModal] = useState(false);
+  const [showPayReportModal, setShowPayReportModal] = useState(false);
   const [showJobsView, setShowJobsView] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
@@ -625,6 +627,7 @@ function HomeInner() {
             timeEntries={timeEntries}
             onClockIn={handleClockIn}
             onClockOut={handleClockOut}
+            onOpenPayReport={() => setShowPayReportModal(true)}
           />
         )}
         {activeTab === "chat" && (
@@ -673,6 +676,11 @@ function HomeInner() {
           onClose={() => setShowTimeEntryModal(false)}
           onAddTime={handleAddTimeEntry}
         />
+      )}
+
+      {/* Pay Report Modal */}
+      {showPayReportModal && (
+        <PayReportModal onClose={() => setShowPayReportModal(false)} />
       )}
 
       {/* Jobs View Modal */}
