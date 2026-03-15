@@ -1,23 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import dynamic from "next/dynamic";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from "date-fns";
 import { X, Download, Send, Calendar, Clock, DollarSign, FileText, Loader2, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { PayReportData } from "@/lib/types";
-
-// Lazy-load PDF components to avoid SSR issues
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => ({ default: mod.PDFDownloadLink })),
-  { ssr: false }
-);
-
-const PayReportPDFComponent = dynamic(
-  () => import("./PayReportPDF").then((mod) => ({ default: mod.PayReportPDF })),
-  { ssr: false }
-);
 
 // ─── Date range presets ────────────────────────────────────────────────────────
 function getPresets() {
@@ -147,10 +135,27 @@ export default function PayReportModal({ onClose, targetEmployeeId, targetEmploy
     ? `pay-report-${reportData.employee.full_name.replace(/\s+/g, "-").toLowerCase()}-${startDate}-to-${endDate}.pdf`
     : "pay-report.pdf";
 
-  const pdfDocument = useMemo(
-    () => (reportData ? <PayReportPDFComponent data={reportData} /> : null),
-    [reportData]
-  );
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!reportData) return;
+    setPdfGenerating(true);
+    try {
+      const { pdf } = await import("@react-pdf/renderer");
+      const { PayReportPDF } = await import("./PayReportPDF");
+      const blob = await pdf(<PayReportPDF data={reportData} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = pdfFilename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setPdfGenerating(false);
+    }
+  }, [reportData, pdfFilename]);
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-white">
@@ -354,27 +359,23 @@ export default function PayReportModal({ onClose, targetEmployeeId, targetEmploy
           className="border-t border-slate-100 bg-white px-4 py-4 flex flex-col gap-2 flex-shrink-0"
           style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
         >
-          {pdfDocument && (
-          <PDFDownloadLink
-            document={pdfDocument}
-            fileName={pdfFilename}
-            className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors no-underline"
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfGenerating || reportData.entries.length === 0}
+            className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {({ loading: pdfLoading }: { loading: boolean }) =>
-              pdfLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Preparing PDF…</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  <span>Download PDF Report</span>
-                </>
-              )
-            }
-          </PDFDownloadLink>
-          )}
+            {pdfGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Preparing PDF…</span>
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                <span>Download PDF Report</span>
+              </>
+            )}
+          </button>
 
           <button
             onClick={handleSubmit}
