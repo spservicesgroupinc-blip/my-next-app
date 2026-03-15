@@ -18,12 +18,15 @@ import {
   Activity,
   UserCheck,
   CircleDot,
+  DollarSign,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Task, TimeEntry, Job } from "@/lib/types";
 import LiveMapView from "@/components/LiveMapView";
+import dynamic from "next/dynamic";
+const PayrollTab = dynamic(() => import("@/components/payroll/PayrollTab"), { ssr: false });
 
-type AdminTab = "live" | "employees" | "jobs" | "map";
+type AdminTab = "live" | "employees" | "jobs" | "map" | "payroll";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
@@ -69,6 +72,8 @@ export default function AdminView() {
   const supabase = createClient();
   const [adminTab, setAdminTab] = useState<AdminTab>("live");
   const [employees, setEmployees] = useState<EmployeeWithStatus[]>([]);
+  const employeesRef = useRef<EmployeeWithStatus[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [isLoading, setIsLoading] = useState(true);
   
   // ── Activity feed state ───────────────────────────────────────────────────
@@ -128,6 +133,7 @@ export default function AdminView() {
     }));
 
     setEmployees(enriched);
+    employeesRef.current = enriched;
     setIsLoading(false);
   }, [supabase]);
 
@@ -157,26 +163,66 @@ export default function AdminView() {
     // Tick every second to update elapsed times
     const tickInterval = setInterval(() => setTick((t) => t + 1), 1000);
 
-    // Real-time: refresh when time_entries change
+    // Real-time: watch time_entries, tasks, jobs, employee_locations
     const sub = supabase
       .channel("admin-live")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "time_entries" },
         async (payload) => {
-          loadEmployees();
-          // Add to activity feed
-          const emp = employees.find((e) => e.id === (payload.new as any).user_id);
+          await loadEmployees();
+          const emp = employeesRef.current.find(
+            (e) => e.id === (payload.new as any).user_id
+          );
+          let employeeName: string = emp?.full_name ?? "";
+          if (!employeeName) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", (payload.new as any).user_id)
+              .single();
+            employeeName = prof?.full_name ?? "Unknown";
+          }
           setActivityFeed((prev) => [
             {
               id: crypto.randomUUID(),
               type: "clock_in",
-              employeeName: emp?.full_name ?? "Unknown",
+              employeeName,
               jobName: (payload.new as any).job_name,
               timestamp: new Date().toISOString(),
             },
             ...prev.slice(0, 49),
           ]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "time_entries" },
+        async (payload) => {
+          await loadEmployees();
+          const entry = payload.new as any;
+          if (entry.clock_out) {
+            const emp = employeesRef.current.find((e) => e.id === entry.user_id);
+            let employeeName: string = emp?.full_name ?? "";
+            if (!employeeName) {
+              const { data: prof } = await supabase
+                .from("profiles")
+                .select("full_name")
+                .eq("id", entry.user_id)
+                .single();
+              employeeName = prof?.full_name ?? "Unknown";
+            }
+            setActivityFeed((prev) => [
+              {
+                id: crypto.randomUUID(),
+                type: "clock_out",
+                employeeName,
+                jobName: entry.job_name,
+                timestamp: new Date().toISOString(),
+              },
+              ...prev.slice(0, 49),
+            ]);
+          }
         }
       )
       .on(
@@ -190,13 +236,24 @@ export default function AdminView() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "tasks" },
         async (payload) => {
-          loadEmployees();
-          const emp = employees.find((e) => e.id === (payload.new as any).created_by);
+          await loadEmployees();
+          const emp = employeesRef.current.find(
+            (e) => e.id === (payload.new as any).created_by
+          );
+          let employeeName: string = emp?.full_name ?? "";
+          if (!employeeName) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", (payload.new as any).created_by)
+              .single();
+            employeeName = prof?.full_name ?? "Unknown";
+          }
           setActivityFeed((prev) => [
             {
               id: crypto.randomUUID(),
               type: "task_insert",
-              employeeName: emp?.full_name ?? "Unknown",
+              employeeName,
               taskTitle: (payload.new as any).title,
               jobName: (payload.new as any).job_name,
               timestamp: new Date().toISOString(),
@@ -209,13 +266,24 @@ export default function AdminView() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "tasks" },
         async (payload) => {
-          loadEmployees();
-          const emp = employees.find((e) => e.id === (payload.new as any).updated_by);
+          await loadEmployees();
+          const emp = employeesRef.current.find(
+            (e) => e.id === (payload.new as any).updated_by
+          );
+          let employeeName: string = emp?.full_name ?? "";
+          if (!employeeName && (payload.new as any).updated_by) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", (payload.new as any).updated_by)
+              .single();
+            employeeName = prof?.full_name ?? "Unknown";
+          }
           setActivityFeed((prev) => [
             {
               id: crypto.randomUUID(),
               type: "task_update",
-              employeeName: emp?.full_name ?? "Unknown",
+              employeeName: employeeName ?? "Someone",
               taskTitle: (payload.new as any).title,
               timestamp: new Date().toISOString(),
             },
@@ -228,13 +296,18 @@ export default function AdminView() {
         { event: "*", schema: "public", table: "jobs" },
         () => loadJobs()
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setConnectionStatus("connected");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setConnectionStatus("disconnected");
+        else setConnectionStatus("connecting");
+      });
 
     return () => {
       supabase.removeChannel(sub);
       clearInterval(tickInterval);
     };
-  }, [loadEmployees, loadEmails, loadJobs, supabase, employees]);
+    // Do NOT include `employees` in deps — use employeesRef.current inside handlers
+  }, [loadEmployees, loadEmails, loadJobs, supabase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Invite new employee ───────────────────────────────────────────────────
   async function handleAddEmployee(e: React.FormEvent) {
@@ -440,12 +513,38 @@ export default function AdminView() {
             <MapPin className="h-3.5 w-3.5" />
             Map
           </button>
+          <button
+            onClick={() => setAdminTab("payroll")}
+            className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
+              adminTab === "payroll"
+                ? "bg-orange-600 text-white shadow-sm"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+            }`}
+          >
+            <DollarSign className="h-4 w-4" />
+            Payroll
+          </button>
         </div>
       </div>
 
       {/* ── LIVE VIEW ───────────────────────────────────────────────────────── */}
       {adminTab === "live" && (
         <div className="flex flex-col gap-4 overflow-hidden p-4 flex-1 min-h-0">
+          {/* Connection status */}
+          <div className="flex items-center gap-1.5 mb-3">
+            <span
+              className={`inline-flex h-2 w-2 rounded-full ${
+                connectionStatus === 'connected'
+                  ? 'bg-emerald-500'
+                  : connectionStatus === 'connecting'
+                  ? 'bg-amber-400 animate-pulse'
+                  : 'bg-red-500'
+              }`}
+            />
+            <span className="text-xs text-slate-500 font-medium">
+              {connectionStatus === 'connected' ? 'Live' : connectionStatus === 'connecting' ? 'Connecting…' : 'Disconnected'}
+            </span>
+          </div>
           {/* Summary row - 4 stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
             <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
@@ -824,6 +923,9 @@ export default function AdminView() {
 
       {/* ── MAP VIEW ────────────────────────────────────────────────────────── */}
       {adminTab === "map" && <LiveMapView />}
+
+      {/* ── PAYROLL TAB ─────────────────────────────────────────────────────── */}
+      {adminTab === "payroll" && <PayrollTab />}
 
       {/* ── ADD EMPLOYEE MODAL ───────────────────────────────────────────────── */}
       {showAddEmployee && (
