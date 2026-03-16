@@ -1167,7 +1167,7 @@ export default function AdminView() {
           onClick={() => setShowAddEmployee(false)}
         >
           <div
-            className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8"
+            className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 max-h-[90dvh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -1263,7 +1263,7 @@ export default function AdminView() {
           onClick={() => setEditEmployee(null)}
         >
           <div
-            className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8"
+            className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 max-h-[90dvh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
