@@ -498,13 +498,23 @@ function HomeInner() {
   const handleSendImage = useCallback(
     async (imageUrl: string, text?: string) => {
       if (!profile || !user) return;
-      const { error } = await supabase.from("chat_messages").insert({
-        sender_id: user.id,
-        text: text ?? "",
-        image_url: imageUrl,
-        company_id: profile.company_id,
-      });
-      if (error) console.error("Failed to send image:", error);
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .insert({
+          sender_id: user.id,
+          text: text ?? "",
+          image_url: imageUrl,
+          company_id: profile.company_id,
+        })
+        .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
+        .single();
+      if (error) {
+        console.error("Failed to send image:", error);
+        return;
+      }
+      if (data) {
+        setChatMessages((prev) => [...prev, data as ChatMessage]);
+      }
     },
     [supabase, profile, user]
   );
