@@ -160,7 +160,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-5 pb-8 animate-[slideUp_0.3s_ease-out] max-h-[70vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-5 pb-8 animate-[slideUp_0.3s_ease-out] max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
