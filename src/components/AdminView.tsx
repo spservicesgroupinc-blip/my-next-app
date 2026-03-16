@@ -21,12 +21,15 @@ import {
   FileText,
   CheckCircle,
   Eye,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import { Profile, Task, TimeEntry, Job } from "@/lib/types";
+import { Profile, Task, TimeEntry, Job, JobPhoto } from "@/lib/types";
 import type { PayReportSubmission } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePhotoUpload } from "@/lib/usePhotoUpload";
+import PhotoGallery from "@/components/photos/PhotoGallery";
 import LiveMapView from "@/components/LiveMapView";
 import ProgressRing from "@/components/ProgressRing";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -50,7 +53,7 @@ interface ActivityEvent {
 
 export default function AdminView() {
   const supabase = useMemo(() => createClient(), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [adminTab, setAdminTab] = useState<AdminTab>("live");
   const [employees, setEmployees] = useState<EmployeeWithStatus[]>([]);
   const employeesRef = useRef<EmployeeWithStatus[]>([]);
@@ -88,6 +91,11 @@ export default function AdminView() {
   const [newJobName, setNewJobName] = useState("");
   const [addingJob, setAddingJob] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+
+  // ── Job photo state ───────────────────────────────────────────────────────
+  const [jobPhotos, setJobPhotos] = useState<Record<string, (JobPhoto & { url: string })[]>>({});
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const { uploadPhoto: uploadJobPhoto, deletePhoto: deleteJobPhoto, uploading: jobPhotoUploading, error: jobPhotoError } = usePhotoUpload("job-photos");
 
   // ── Pay Submissions state ─────────────────────────────────────────────────
   const [paySubmissions, setPaySubmissions] = useState<PayReportSubmission[]>([]);
@@ -480,6 +488,73 @@ export default function AdminView() {
     setJobs((prev) => prev.filter((j) => j.id !== jobToDelete));
     setJobToDelete(null);
   }
+
+  // ── Job photo fetching ────────────────────────────────────────────────────
+  const fetchJobPhotos = async (jobId: string) => {
+    if (jobPhotos[jobId] !== undefined) return; // already loaded
+    const { data } = await supabase
+      .from("job_photos")
+      .select("*")
+      .eq("job_id", jobId)
+      .order("created_at", { ascending: true });
+
+    if (data) {
+      const withUrls = await Promise.all(
+        data.map(async (p: JobPhoto) => {
+          const { data: sd } = await supabase.storage
+            .from("job-photos")
+            .createSignedUrl(p.storage_path, 3600);
+          return { ...p, url: sd?.signedUrl ?? "" };
+        })
+      );
+      setJobPhotos((prev) => ({ ...prev, [jobId]: withUrls }));
+    } else {
+      setJobPhotos((prev) => ({ ...prev, [jobId]: [] }));
+    }
+  };
+
+  const handleJobPhotoUpload = async (jobId: string, files: FileList) => {
+    if (!profile) return;
+    const existing = jobPhotos[jobId] ?? [];
+    const remaining = 5 - existing.length;
+    const toUpload = Array.from(files).slice(0, remaining);
+
+    for (const file of toUpload) {
+      const result = await uploadJobPhoto(file, profile.company_id, jobId, profile.id);
+      if (!result) continue;
+
+      const { data: inserted } = await supabase
+        .from("job_photos")
+        .insert({
+          job_id: jobId,
+          company_id: profile.company_id,
+          uploader_id: profile.id,
+          storage_path: result.storagePath,
+          file_name: result.fileName,
+          file_size: result.fileSize,
+          mime_type: result.mimeType,
+        })
+        .select()
+        .single();
+
+      if (inserted) {
+        setJobPhotos((prev) => ({
+          ...prev,
+          [jobId]: [...(prev[jobId] ?? []), { ...inserted, url: result.publicUrl }],
+        }));
+      }
+    }
+  };
+
+  const handleJobPhotoDelete = async (jobId: string, photo: JobPhoto & { url: string }) => {
+    const ok = await deleteJobPhoto(photo.storage_path);
+    if (!ok) return;
+    await supabase.from("job_photos").delete().eq("id", photo.id);
+    setJobPhotos((prev) => ({
+      ...prev,
+      [jobId]: (prev[jobId] ?? []).filter((p) => p.id !== photo.id),
+    }));
+  };
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("en-US", {
@@ -917,39 +992,76 @@ export default function AdminView() {
               {jobs.map((job) => (
                 <div
                   key={job.id}
-                  className={`flex items-center justify-between rounded-xl bg-white border p-3 shadow-sm ${
+                  className={`rounded-xl bg-white border shadow-sm overflow-hidden ${
                     job.is_active ? "border-slate-100" : "border-slate-200 opacity-60"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Briefcase className={`h-4 w-4 ${job.is_active ? "text-orange-500" : "text-slate-300"}`} />
-                    <span className="text-sm font-medium text-slate-900">{job.name}</span>
-                    {!job.is_active && (
-                      <span className="text-[10px] font-medium text-slate-400 uppercase">
-                        Inactive
-                      </span>
-                    )}
+                  {/* Job row header — click to expand/collapse */}
+                  <div
+                    className="flex items-center justify-between p-3 cursor-pointer select-none"
+                    onClick={() => {
+                      if (expandedJobId === job.id) {
+                        setExpandedJobId(null);
+                      } else {
+                        setExpandedJobId(job.id);
+                        fetchJobPhotos(job.id);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Briefcase className={`h-4 w-4 ${job.is_active ? "text-orange-500" : "text-slate-300"}`} />
+                      <span className="text-sm font-medium text-slate-900">{job.name}</span>
+                      {!job.is_active && (
+                        <span className="text-[10px] font-medium text-slate-400 uppercase">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleJob(job.id, job.is_active); }}
+                        className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors ${
+                          job.is_active
+                            ? "bg-red-50 text-red-600 hover:bg-red-100"
+                            : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                        }`}
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {job.is_active ? "Deactivate" : "Reactivate"}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id); }}
+                        className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                        aria-label="Delete job"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                      <ChevronDown
+                        className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                          expandedJobId === job.id ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleJob(job.id, job.is_active)}
-                      className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors ${
-                        job.is_active
-                          ? "bg-red-50 text-red-600 hover:bg-red-100"
-                          : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                      }`}
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      {job.is_active ? "Deactivate" : "Reactivate"}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteJob(job.id)}
-                      className="p-1 text-slate-300 hover:text-red-500 transition-colors"
-                      aria-label="Delete job"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+
+                  {/* Expanded photo gallery panel */}
+                  {expandedJobId === job.id && (
+                    <div className="px-4 pb-4 pt-2 border-t border-slate-100 bg-slate-50/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Photos</span>
+                      </div>
+                      <PhotoGallery
+                        photos={jobPhotos[job.id] ?? []}
+                        onUpload={(files) => handleJobPhotoUpload(job.id, files)}
+                        onDelete={(photo) => handleJobPhotoDelete(job.id, photo as JobPhoto & { url: string })}
+                        currentUserId={profile?.id ?? ""}
+                        isAdmin={true}
+                        uploading={jobPhotoUploading}
+                        uploadError={jobPhotoError}
+                        maxPhotos={5}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
