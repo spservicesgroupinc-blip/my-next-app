@@ -269,6 +269,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
 
             {showNewEmployee && (
               <div className="mt-2 rounded-xl border border-orange-200 bg-orange-50 p-3 space-y-2">
+                <p className="text-xs font-semibold text-slate-700 mb-1">Quick Add Employee</p>
                 {addEmpError && (
                   <p className="text-xs text-red-600 font-medium">{addEmpError}</p>
                 )}
@@ -277,21 +278,21 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   value={newEmpName}
                   onChange={(e) => setNewEmpName(e.target.value)}
                   placeholder="Full name"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <input
                   type="email"
                   value={newEmpEmail}
                   onChange={(e) => setNewEmpEmail(e.target.value)}
                   placeholder="Email"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <input
                   type="password"
                   value={newEmpPassword}
                   onChange={(e) => setNewEmpPassword(e.target.value)}
                   placeholder="Password (min 6 chars)"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <input
                   type="number"
@@ -300,7 +301,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   placeholder="Hourly rate"
                   min="0"
                   step="0.5"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <div className="flex gap-2">
                   <button

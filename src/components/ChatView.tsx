@@ -81,7 +81,7 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
             </div>
             <div className="text-center">
               <p className="text-sm font-semibold text-slate-600">No messages yet</p>
-              <p className="text-xs text-slate-400 mt-0.5">Say hi to your team!</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[200px]">Start a conversation with your team. Type a message below to get things going.</p>
             </div>
           </div>
         ) : (

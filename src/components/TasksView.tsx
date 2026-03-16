@@ -151,17 +151,44 @@ export default function TasksView({
       <div className="flex-1 overflow-y-auto">
         {view === "list" ? (
           <div className="flex flex-col gap-3 p-4">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onOpen={handleOpenTask}
-                onToggleComplete={onToggleComplete}
-                onDelete={onDelete}
-                onToggleChecklist={onToggleChecklist}
-                onAddLineItem={onAddLineItem}
-              />
-            ))}
+            {filteredTasks.length === 0 ? (
+              <div className="py-16 flex flex-col items-center gap-3">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50">
+                  <Plus className="h-8 w-8 text-slate-300" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {search ? "No tasks match your search" : "No tasks yet"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[220px]">
+                    {search
+                      ? "Try a different search term or clear your filter."
+                      : "Tap the + button to create your first task and get your team organized."}
+                  </p>
+                </div>
+                {!search && (
+                  <button
+                    onClick={onOpenAddModal}
+                    className="mt-2 flex items-center gap-1.5 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-700 active:scale-95 transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Task
+                  </button>
+                )}
+              </div>
+            ) : (
+              filteredTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onOpen={handleOpenTask}
+                  onToggleComplete={onToggleComplete}
+                  onDelete={onDelete}
+                  onToggleChecklist={onToggleChecklist}
+                  onAddLineItem={onAddLineItem}
+                />
+              ))
+            )}
           </div>
         ) : (
           <KanbanBoard
