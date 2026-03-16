@@ -711,6 +711,7 @@ function HomeInner() {
                   setShowTimeEntryModal(true);
                   // Note: You may want to pass the selected job to TimeEntryModal
                 }}
+                autoOpenAdd={true}
               />
             </div>
           </div>

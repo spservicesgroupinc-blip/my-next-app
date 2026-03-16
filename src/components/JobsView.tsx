@@ -9,13 +9,14 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 interface JobsViewProps {
   onClose: () => void;
   onSelectJob: (jobName: string) => void;
+  autoOpenAdd?: boolean;
 }
 
-export default function JobsView({ onClose, onSelectJob }: JobsViewProps) {
+export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsViewProps) {
   const supabase = createClient();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddJob, setShowAddJob] = useState(false);
+  const [showAddJob, setShowAddJob] = useState(autoOpenAdd ?? false);
   const [newJobName, setNewJobName] = useState("");
   const [addingJob, setAddingJob] = useState(false);
   const [jobTimeEntries, setJobTimeEntries] = useState<Record<string, TimeEntry[]>>({});
