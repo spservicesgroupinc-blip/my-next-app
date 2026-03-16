@@ -685,7 +685,6 @@ export default function AdminView() {
                               </div>
                             </div>
                           </div>
-                        </div>
 
                         {emp.activeShift ? (
                           <div className="mt-1.5 ml-[46px]">
