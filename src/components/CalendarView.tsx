@@ -127,7 +127,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
     return (
       <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={() => setSelectedDay(null)}>
         <div
-          className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 max-h-[60vh] overflow-y-auto animate-[slideUp_0.3s_ease-out]"
+          className="w-full max-w-lg rounded-t-2xl bg-white p-5 pb-8 max-h-[85dvh] overflow-y-auto animate-[slideUp_0.3s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-center mb-3 -mt-1">
