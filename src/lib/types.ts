@@ -143,3 +143,37 @@ export interface PayReportSubmission {
   // Joined fields
   employee?: Pick<Profile, "id" | "full_name">;
 }
+
+// ─── TaskPhoto (matches public.task_photos) ───────────────────────────────────
+export interface TaskPhoto {
+  id: string;
+  task_id: string;
+  company_id: string;
+  uploader_id: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+  // Joined
+  uploader?: Pick<Profile, "id" | "full_name">;
+  // Computed at load time
+  url?: string;
+}
+
+// ─── JobPhoto (matches public.job_photos) ─────────────────────────────────────
+export interface JobPhoto {
+  id: string;
+  job_id: string;
+  company_id: string;
+  uploader_id: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+  // Joined
+  uploader?: Pick<Profile, "id" | "full_name">;
+  // Computed at load time
+  url?: string;
+}
