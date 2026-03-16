@@ -88,13 +88,13 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
           <button
             key={d.toISOString()}
             onClick={() => setSelectedDay(d)}
-            className={`relative flex flex-col items-center justify-center py-2.5 rounded-xl transition-all active:scale-95 ${
+            className={`relative flex flex-col items-center justify-center py-3 rounded-xl transition-all active:scale-95 min-h-[52px] ${
               !inMonth ? "text-slate-300" : "text-slate-700 hover:bg-slate-100"
             } ${today ? "bg-orange-50 font-bold" : ""} ${
               selectedDay && isSameDay(d, selectedDay) ? "ring-2 ring-orange-500 bg-orange-50" : ""
             }`}
           >
-            <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
               today ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md" : 
               inMonth ? "text-slate-700" : "text-slate-300"
             }`}>

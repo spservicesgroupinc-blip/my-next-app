@@ -67,7 +67,7 @@ export default function KanbanBoard({ tasks, onUpdateStatus, onOpenTask }: Kanba
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4 px-1 -mx-1" style={{ minHeight: "60vh" }}>
+    <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto pb-4 px-1 -mx-1" style={{ minHeight: "60vh" }}>
       {COLUMNS.map((col) => {
         const colTasks = tasks.filter((t) => t.status === col.status);
         const isOver = dragOverCol === col.status;
@@ -75,7 +75,7 @@ export default function KanbanBoard({ tasks, onUpdateStatus, onOpenTask }: Kanba
         return (
           <div
             key={col.status}
-            className={`flex flex-col rounded-xl border min-w-[260px] flex-1 transition-all ${col.bg} ${
+            className={`flex flex-col rounded-xl border min-w-0 sm:min-w-[260px] flex-1 transition-all ${col.bg} ${
               isOver ? "ring-2 ring-orange-400 ring-offset-1" : ""
             }`}
             onDragOver={(e) => handleDragOver(e, col.status)}
@@ -141,14 +141,14 @@ export default function KanbanBoard({ tasks, onUpdateStatus, onOpenTask }: Kanba
                         </div>
 
                         {pct !== null && (
-                          <div className="flex items-center gap-1">
-                            <div className="h-1 w-12 rounded-full bg-slate-100 overflow-hidden">
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-2 w-14 rounded-full bg-slate-100 overflow-hidden">
                               <div
                                 className="h-full rounded-full bg-emerald-500 transition-all"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
-                            <span className="text-[10px] text-slate-400">{pct}%</span>
+                            <span className="text-xs font-medium text-slate-500">{pct}%</span>
                           </div>
                         )}
                       </div>

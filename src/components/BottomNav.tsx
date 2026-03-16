@@ -37,7 +37,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, 
       <button
         key={tab.id}
         onClick={() => onTabChange(tab.id)}
-        className={`relative flex flex-col items-center gap-0.5 min-w-[3rem] px-2 py-2 transition-all duration-150 ${
+        className={`relative flex flex-col items-center gap-0.5 min-w-[3.5rem] px-3 py-2.5 transition-all duration-150 ${
           isActive ? activeColor : "text-slate-400 hover:text-slate-600"
         }`}
       >
@@ -45,14 +45,14 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, 
           <span className="absolute top-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-current" />
         )}
         <span className="relative">
-          <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+          <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
           {showBadge && (
-            <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white leading-none">
+            <span className="absolute -top-1.5 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white leading-none">
               {unreadChatCount > 9 ? "9+" : unreadChatCount}
             </span>
           )}
         </span>
-        <span className={`text-[10px] leading-tight ${isActive ? "font-semibold" : "font-medium"}`}>
+        <span className={`text-[11px] leading-tight ${isActive ? "font-semibold" : "font-medium"}`}>
           {tab.label}
         </span>
       </button>
@@ -61,7 +61,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, 
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center justify-around py-2 relative">
+      <div className="flex items-center justify-around py-1 relative">
         {/* Left tabs */}
         {leftTabs.map(renderTab)}
 

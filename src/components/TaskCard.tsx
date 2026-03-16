@@ -6,7 +6,6 @@ import {
   Trash2,
   CalendarDays,
   AlertTriangle,
-  Plus,
   ChevronRight,
   Save,
 } from "lucide-react";
@@ -29,8 +28,6 @@ export default function TaskCard({
   onAddLineItem,
   onOpen,
 }: TaskCardProps) {
-  const [newItemText, setNewItemText] = useState("");
-  const [showAddItem, setShowAddItem] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const completedCount = task.checklist.filter((c) => c.completed).length;
 
@@ -60,12 +57,6 @@ export default function TaskCard({
 
   const handleToggleChecklistWithFeedback = (itemId: string) => {
     onToggleChecklist(task.id, itemId);
-    setJustSaved(true);
-    setTimeout(() => setJustSaved(false), 1000);
-  };
-
-  const handleAddLineItemWithFeedback = (text: string) => {
-    onAddLineItem(task.id, text);
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 1000);
   };
@@ -101,11 +92,11 @@ export default function TaskCard({
           )}
         </div>
         
-        {/* Action buttons - visible on hover/tap */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+        {/* Action buttons - always visible for touch accessibility */}
+        <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); onToggleComplete(task.id); }}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors active:scale-90 ${
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors active:scale-90 ${
               isCompleted
                 ? "text-emerald-500 bg-emerald-50 hover:bg-emerald-100"
                 : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"
@@ -116,12 +107,12 @@ export default function TaskCard({
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors active:scale-90"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors active:scale-90"
             aria-label="Delete task"
           >
             <Trash2 className="h-4 w-4" />
           </button>
-          <div className="flex h-9 w-9 items-center justify-center text-slate-300">
+          <div className="flex h-10 w-10 items-center justify-center text-slate-300">
             <ChevronRight className="h-4 w-4" />
           </div>
         </div>
@@ -145,16 +136,16 @@ export default function TaskCard({
           )}
         </div>
         
-        {/* Checklist progress - compact */}
+        {/* Checklist progress - mobile-friendly size */}
         {task.checklist.length > 0 && (
           <div className="flex items-center gap-2">
-            <div className="h-1.5 w-16 rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-2 w-20 rounded-full bg-slate-100 overflow-hidden">
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-300"
                 style={{ width: `${(completedCount / task.checklist.length) * 100}%` }}
               />
             </div>
-            <span className="text-[10px] font-medium text-slate-400">
+            <span className="text-xs font-medium text-slate-500">
               {completedCount}/{task.checklist.length}
             </span>
           </div>
@@ -171,94 +162,43 @@ export default function TaskCard({
         <span className="text-[11px] text-slate-500 truncate">{task.job_name}</span>
       </div>
 
-      {/* Inline checklist - only show if items exist or adding */}
-      {(task.checklist.length > 0 || showAddItem) && (
+      {/* Inline checklist - show first 2 items only, no inline editing */}
+      {task.checklist.length > 0 && (
         <div className="mt-2.5 pt-2.5 border-t border-slate-100">
-          {task.checklist.length > 0 && !showAddItem && (
-            <div className="space-y-1.5">
-              {task.checklist.slice(0, 3).map((item: ChecklistItem) => (
-                <label
-                  key={item.id}
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 cursor-pointer group py-0.5"
+          <div className="space-y-1.5">
+            {task.checklist.slice(0, 2).map((item: ChecklistItem) => (
+              <label
+                key={item.id}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-2 cursor-pointer py-1 min-h-[36px]"
+              >
+                <input
+                  type="checkbox"
+                  checked={item.completed}
+                  onChange={() => handleToggleChecklistWithFeedback(item.id)}
+                  className="h-5 w-5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 accent-orange-600 shrink-0"
+                />
+                <span
+                  className={`text-sm transition-colors ${
+                    item.completed
+                      ? "text-slate-400 line-through"
+                      : "text-slate-600"
+                  }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={item.completed}
-                    onChange={() => handleToggleChecklistWithFeedback(item.id)}
-                    className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500 accent-orange-600"
-                  />
-                  <span
-                    className={`text-xs transition-colors ${
-                      item.completed
-                        ? "text-slate-400 line-through"
-                        : "text-slate-600 group-hover:text-slate-800"
-                    }`}
-                  >
-                    {item.text}
-                  </span>
-                </label>
-              ))}
-              {task.checklist.length > 3 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onOpen(task); }}
-                  className="text-xs text-slate-400 hover:text-orange-600 transition-colors"
-                >
-                  +{task.checklist.length - 3} more items
-                </button>
-              )}
-            </div>
-          )}
+                  {item.text}
+                </span>
+              </label>
+            ))}
+            {task.checklist.length > 2 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpen(task); }}
+                className="text-sm text-slate-400 hover:text-orange-600 transition-colors py-1 min-h-[36px]"
+              >
+                +{task.checklist.length - 2} more items
+              </button>
+            )}
+          </div>
 
-          {/* Add line item inline */}
-          {showAddItem ? (
-            <div onClick={(e) => e.stopPropagation()} className="flex gap-1.5">
-              <input
-                type="text"
-                value={newItemText}
-                onChange={(e) => setNewItemText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newItemText.trim()) {
-                    handleAddLineItemWithFeedback(newItemText.trim());
-                    setNewItemText("");
-                  }
-                  if (e.key === "Escape") {
-                    setShowAddItem(false);
-                    setNewItemText("");
-                  }
-                }}
-                placeholder="New line item..."
-                autoFocus
-                className="flex-1 rounded-md border border-dashed border-slate-300 px-2 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-              <button
-                onClick={() => {
-                  if (newItemText.trim()) {
-                    handleAddLineItemWithFeedback(newItemText.trim());
-                    setNewItemText("");
-                  }
-                }}
-                disabled={!newItemText.trim()}
-                className="flex h-8 w-8 items-center justify-center rounded-md bg-orange-600 text-white text-xs font-medium hover:bg-orange-700 disabled:opacity-40 transition-colors active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => { setShowAddItem(false); setNewItemText(""); }}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors active:scale-95"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowAddItem(true); }}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors mt-1 py-1.5 px-1"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add line item</span>
-            </button>
-          )}
         </div>
       )}
 

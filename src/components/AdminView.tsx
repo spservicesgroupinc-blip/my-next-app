@@ -645,17 +645,16 @@ export default function AdminView() {
                     return (
                       <div
                         key={emp.id}
-                        className={`rounded-2xl p-3.5 border shadow-sm transition-all hover:shadow-md ${
+                        className={`rounded-2xl p-3 border shadow-sm transition-all hover:shadow-md ${
                           emp.activeShift
                             ? "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200"
                             : "bg-white border-slate-100"
                         }`}
                       >
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {/* Avatar initials */}
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 text-xs font-bold shrink-0 shadow-sm">
+                        <div className="flex items-center gap-2.5">
+                          {/* Avatar initials */}
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 text-xs font-bold shrink-0 shadow-sm">
                               {emp.full_name
                                 .split(" ")
                                 .map((n) => n[0])
@@ -688,24 +687,22 @@ export default function AdminView() {
                           </div>
                         </div>
 
-                        {/* Job info */}
                         {emp.activeShift ? (
-                          <div className="mb-2 ml-12">
-                            <p className="text-xs text-emerald-700 font-medium">
+                          <div className="mt-1.5 ml-[46px]">
+                            <p className="text-xs text-emerald-700 font-medium truncate">
                               {emp.activeShift.job_name}
                               <span className="text-emerald-600 ml-1">· since {formatTime(emp.activeShift.clock_in)}</span>
                             </p>
                           </div>
                         ) : (
-                          <div className="ml-12">
+                          <div className="ml-[46px]">
                             <p className="text-xs text-slate-400">Not clocked in</p>
                           </div>
                         )}
 
-                        {/* Current task highlight */}
                         {topTask ? (
-                          <div className="mt-2 ml-12 rounded-xl bg-white border border-slate-100 p-2.5">
-                            <div className="flex items-center justify-between">
+                          <div className="mt-2 ml-[46px] rounded-xl bg-white border border-slate-100 p-2">
+                            <div className="flex items-center justify-between gap-2">
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-slate-700 truncate">
                                   {topTask.title}
@@ -726,7 +723,7 @@ export default function AdminView() {
                             )}
                           </div>
                         ) : emp.activeShift ? (
-                          <div className="mt-2 ml-12 rounded-xl bg-amber-50 border border-amber-200 p-2.5">
+                          <div className="mt-2 ml-[46px] rounded-xl bg-amber-50 border border-amber-200 p-2">
                             <p className="text-xs text-amber-700 font-medium flex items-center gap-1.5">
                               <CircleDot className="h-3.5 w-3.5" />
                               No active task assigned

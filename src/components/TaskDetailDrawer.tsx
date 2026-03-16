@@ -163,7 +163,7 @@ export default function TaskDetailDrawer({
       {/* Drawer — bottom sheet on mobile, right panel on desktop */}
       <div
         className="fixed z-[160] bg-white shadow-2xl
-          bottom-0 left-0 right-0 rounded-t-2xl max-h-[92dvh] overflow-y-auto
+          bottom-0 left-0 right-0 rounded-t-2xl max-h-[80dvh] overflow-y-auto
           md:bottom-0 md:top-0 md:left-auto md:right-0 md:w-[480px] md:rounded-none md:rounded-l-2xl md:max-h-none"
         style={{ animation: "slideUp 0.3s cubic-bezier(0.16,1,0.3,1)" }}
         onClick={(e) => e.stopPropagation()}
@@ -383,7 +383,7 @@ export default function TaskDetailDrawer({
                   </span>
                   <button
                     onClick={() => handleDeleteChecklistItem(item.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-400 transition-all"
+                    className="p-1.5 text-slate-300 hover:text-red-400 transition-all sm:opacity-0 sm:group-hover:opacity-100"
                     aria-label="Remove checklist item"
                   >
                     <X className="h-3.5 w-3.5" />

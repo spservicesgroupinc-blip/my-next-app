@@ -140,7 +140,7 @@ export default function TimeClockView({
                   setShowNewJob(false);
                 }
               }}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3.5 text-base text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all appearance-none bg-white"
             >
               {jobNames.length === 0 ? (
                 <option value="">No jobs available</option>

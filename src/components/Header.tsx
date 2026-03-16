@@ -95,8 +95,8 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-11 z-50 w-48 rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl shadow-slate-200/50">
-              <div className="px-3.5 py-2.5 border-b border-slate-100">
+            <div className="absolute right-0 top-12 z-50 w-52 rounded-2xl border border-slate-200 bg-white py-2 shadow-xl shadow-slate-200/50">
+              <div className="px-4 py-3 border-b border-slate-100">
                 <p className="text-sm font-semibold text-slate-900">
                   {profile?.full_name}
                 </p>
@@ -111,7 +111,7 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
                   setShowMenu(false);
                   router.push('/settings');
                 }}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
               >
                 <Settings className="h-4 w-4" />
                 Settings
@@ -121,7 +121,7 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
                   setShowMenu(false);
                   await signOut();
                 }}
-                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
                 Sign out

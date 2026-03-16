@@ -59,10 +59,12 @@ export default function NotificationDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer */}
+      {/* Drawer - half-width on desktop, bottom sheet style on mobile */}
       <div
         ref={drawerRef}
-        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-sm flex-col bg-white shadow-2xl"
+        className="fixed z-50 flex flex-col bg-white shadow-2xl
+          bottom-0 left-0 right-0 h-[70vh] rounded-t-2xl
+          sm:top-0 sm:right-0 sm:left-auto sm:bottom-0 sm:h-full sm:w-full sm:max-w-sm sm:rounded-none"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">

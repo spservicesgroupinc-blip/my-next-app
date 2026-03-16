@@ -144,18 +144,19 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
       {/* Input */}
       <div className="border-t border-slate-200 bg-white/95 backdrop-blur-sm p-3">
         <div className="flex items-center gap-2 max-w-3xl mx-auto">
-          <input
-            type="text"
+          <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+            rows={1}
+            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all resize-none max-h-32"
+            style={{ minHeight: '48px' }}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
             aria-label="Send message"
           >
             <Send className="h-5 w-5" />

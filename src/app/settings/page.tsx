@@ -42,7 +42,7 @@ export default function SettingsPage() {
 
       <div className="mx-auto max-w-4xl px-4 py-6 lg:flex lg:gap-6">
         {/* Sidebar tabs */}
-        <nav className="mb-6 flex gap-1 overflow-x-auto pb-1 lg:mb-0 lg:w-48 lg:shrink-0 lg:flex-col lg:pb-0">
+        <nav className="mb-6 flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0 lg:mb-0 lg:w-48 lg:shrink-0 lg:flex-col lg:pb-0">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -50,10 +50,10 @@ export default function SettingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
+                className={`flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium transition-all min-w-fit ${
                   isActive
                     ? "bg-orange-600 text-white shadow-sm shadow-orange-600/30"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 bg-white border border-slate-100 lg:border-0 lg:bg-transparent"
                 }`}
               >
                 <Icon className="h-4 w-4" />
