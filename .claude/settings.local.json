@@ -4,7 +4,9 @@
       "Bash(find /c/Users/russe/my-next-app/src -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json -o -name *.css \\\\\\))",
       "mcp__mcp-registry__search_mcp_registry",
       "mcp__Claude_Preview__preview_start",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(git -C \"C:/Users/russe/my-next-app\" diff HEAD~1 HEAD -- src/components/CalendarView.tsx)",
+      "Bash(git -C \"C:/Users/russe/my-next-app\" log --oneline -- src/components/CalendarView.tsx)"
     ]
   }
 }
