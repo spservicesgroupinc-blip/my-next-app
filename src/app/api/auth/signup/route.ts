@@ -45,50 +45,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Ensure a company exists for this admin user
-  // The DB trigger may have already created the profile + company,
-  // so use upsert / conflict handling to avoid duplicates.
-  let companyId: string | null = null;
+  // The DB trigger `handle_new_user` already runs on auth user creation and:
+  //   1. Creates a brand-new company for this admin
+  //   2. Creates a profile linked to that new company
+  // We must NOT query all companies and pick an arbitrary one — that would
+  // assign the new admin to an existing company (cross-tenant data leak).
+  // Instead, check if the trigger did its job and fall back only if it failed.
 
-  // Check if a company already exists (trigger may have created one)
-  const { data: existingCompany } = await adminClient
-    .from("companies")
-    .select("id")
-    .limit(1)
+  const { data: existingProfile } = await adminClient
+    .from("profiles")
+    .select("id, company_id")
+    .eq("id", userId)
     .single();
 
-  if (existingCompany) {
-    companyId = existingCompany.id;
-  } else {
-    // Create a default company
+  if (!existingProfile) {
+    // Trigger failed — create a fresh company and profile from scratch
     const { data: newCompany, error: companyError } = await adminClient
       .from("companies")
-      .insert({ name: "My Company" })
+      .insert({ name: `${full_name}'s Company` })
       .select("id")
       .single();
 
     if (companyError) {
       console.error("Failed to create company:", companyError.message);
-    } else {
-      companyId = newCompany.id;
+      return NextResponse.json(
+        { error: "Account created but company setup failed: " + companyError.message },
+        { status: 500 }
+      );
     }
-  }
 
-  // Ensure profile exists (trigger may have already created it)
-  const { data: existingProfile } = await adminClient
-    .from("profiles")
-    .select("id")
-    .eq("id", userId)
-    .single();
-
-  if (!existingProfile) {
     const { error: profileError } = await adminClient
       .from("profiles")
       .insert({
         id: userId,
         full_name,
         role: "admin",
-        company_id: companyId,
+        company_id: newCompany.id,
         hourly_rate: 0,
       });
 
@@ -99,13 +91,22 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-  } else {
-    // Profile exists (from trigger) — ensure it has admin role and company
-    await adminClient
-      .from("profiles")
-      .update({ role: "admin", company_id: companyId })
-      .eq("id", userId);
+  } else if (!existingProfile.company_id) {
+    // Profile exists but has no company (partial trigger failure) — create one now
+    const { data: newCompany, error: companyError } = await adminClient
+      .from("companies")
+      .insert({ name: `${full_name}'s Company` })
+      .select("id")
+      .single();
+
+    if (!companyError && newCompany) {
+      await adminClient
+        .from("profiles")
+        .update({ role: "admin", company_id: newCompany.id })
+        .eq("id", userId);
+    }
   }
+  // else: trigger created profile + company correctly — do NOT touch it
 
   return NextResponse.json({ success: true, userId });
 }
