@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Trash2, Calendar, User, Briefcase, AlertTriangle,
-  Plus, Clock, CheckCircle2,
+  Plus, Clock, CheckCircle2, Camera,
 } from "lucide-react";
-import { Task, ChecklistItem, Profile, Job } from "@/lib/types";
+import { Task, ChecklistItem, Profile, Job, TaskPhoto } from "@/lib/types";
+import { usePhotoUpload } from "@/lib/usePhotoUpload";
+import PhotoGallery from "@/components/photos/PhotoGallery";
+import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import ProgressRing from "@/components/ProgressRing";
 
@@ -58,11 +61,15 @@ export default function TaskDetailDrawer({
   onClose,
 }: TaskDetailDrawerProps) {
   const supabase = createClient();
+  const { profile } = useAuth();
+  const { uploadPhoto, deletePhoto, getSignedUrl, uploading, error: uploadError } = usePhotoUpload("task-photos");
   const [employees, setEmployees] = useState<Pick<Profile, "id" | "full_name">[]>([]);
   const [jobs, setJobs] = useState<Pick<Job, "id" | "name">[]>([]);
   const [newItemText, setNewItemText] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [localTask, setLocalTask] = useState<Task>(task);
+  const [photos, setPhotos] = useState<(TaskPhoto & { url: string })[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Keep localTask in sync with parent (Realtime updates)
@@ -86,6 +93,67 @@ export default function TaskDetailDrawer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPhotos() {
+      setPhotosLoading(true);
+      const { data } = await supabase
+        .from("task_photos")
+        .select("*")
+        .eq("task_id", task.id)
+        .order("created_at", { ascending: true });
+
+      if (data && !cancelled) {
+        const withUrls = await Promise.all(
+          data.map(async (p) => {
+            const url = await getSignedUrl(p.storage_path) ?? "";
+            return { ...p, url };
+          })
+        );
+        if (!cancelled) setPhotos(withUrls);
+      }
+      if (!cancelled) setPhotosLoading(false);
+    }
+    fetchPhotos();
+    return () => { cancelled = true; };
+  }, [task.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePhotoUpload = async (files: FileList) => {
+    if (!profile) return;
+    const remaining = 5 - photos.length;
+    const toUpload = Array.from(files).slice(0, remaining);
+
+    for (const file of toUpload) {
+      const result = await uploadPhoto(file, profile.company_id, task.id, profile.id);
+      if (!result) continue;
+
+      const { data: inserted } = await supabase
+        .from("task_photos")
+        .insert({
+          task_id: task.id,
+          company_id: profile.company_id,
+          uploader_id: profile.id,
+          storage_path: result.storagePath,
+          file_name: result.fileName,
+          file_size: result.fileSize,
+          mime_type: result.mimeType,
+        })
+        .select()
+        .single();
+
+      if (inserted) {
+        setPhotos((prev) => [...prev, { ...inserted, url: result.publicUrl }]);
+      }
+    }
+  };
+
+  const handlePhotoDelete = async (photo: TaskPhoto & { url: string }) => {
+    const ok = await deletePhoto(photo.storage_path);
+    if (!ok) return;
+    await supabase.from("task_photos").delete().eq("id", photo.id);
+    setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+  };
 
   const completedCount = localTask.checklist.filter((c) => c.completed).length;
   const pct = localTask.checklist.length > 0 ? completedCount / localTask.checklist.length : 0;
@@ -400,6 +468,27 @@ export default function TaskDetailDrawer({
                 Add item
               </button>
             )}
+          </div>
+
+          {/* Photos */}
+          <div className="px-5 pb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Camera className="h-4 w-4 text-slate-400" />
+              <h3 className="text-sm font-semibold text-slate-700">Photos</h3>
+              {photosLoading && (
+                <span className="text-xs text-slate-400 ml-auto">Loading...</span>
+              )}
+            </div>
+            <PhotoGallery
+              photos={photos}
+              onUpload={handlePhotoUpload}
+              onDelete={(photo) => handlePhotoDelete(photo as TaskPhoto & { url: string })}
+              currentUserId={profile?.id ?? ""}
+              isAdmin={isAdmin}
+              uploading={uploading}
+              uploadError={uploadError}
+              maxPhotos={5}
+            />
           </div>
 
           {/* Audit footer */}
