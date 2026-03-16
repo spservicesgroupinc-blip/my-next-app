@@ -91,3 +91,86 @@ CREATE POLICY "uploader_or_admin_delete_job_photos"
       WHERE id = auth.uid() AND role = 'admin' AND company_id = job_photos.company_id
     )
   );
+
+-- ─── Storage Buckets ──────────────────────────────────────────────────────────
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'task-photos', 'task-photos', false, 10485760,
+  ARRAY['image/jpeg','image/png','image/webp','image/heic','image/heif']
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'job-photos', 'job-photos', false, 10485760,
+  ARRAY['image/jpeg','image/png','image/webp','image/heic','image/heif']
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'chat-images', 'chat-images', false, 10485760,
+  ARRAY['image/jpeg','image/png','image/webp','image/heic','image/heif']
+) ON CONFLICT (id) DO NOTHING;
+
+-- ─── Storage RLS Policies ─────────────────────────────────────────────────────
+-- task-photos
+CREATE POLICY "task_photos_select" ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'task-photos' AND
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+  );
+
+CREATE POLICY "task_photos_insert" ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'task-photos' AND auth.uid() IS NOT NULL AND
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+  );
+
+CREATE POLICY "task_photos_delete" ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'task-photos' AND (
+      auth.uid()::text = (string_to_array(name, '/'))[3] OR
+      EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin' AND company_id::text = (string_to_array(name, '/'))[1])
+    )
+  );
+
+-- job-photos
+CREATE POLICY "job_photos_select" ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'job-photos' AND
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+  );
+
+CREATE POLICY "job_photos_insert" ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'job-photos' AND auth.uid() IS NOT NULL AND
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+  );
+
+CREATE POLICY "job_photos_delete" ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'job-photos' AND (
+      auth.uid()::text = (string_to_array(name, '/'))[3] OR
+      EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin' AND company_id::text = (string_to_array(name, '/'))[1])
+    )
+  );
+
+-- chat-images
+CREATE POLICY "chat_images_select" ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'chat-images' AND
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+  );
+
+CREATE POLICY "chat_images_insert" ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'chat-images' AND auth.uid() IS NOT NULL AND
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+  );
+
+CREATE POLICY "chat_images_delete" ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'chat-images' AND (
+      auth.uid()::text = (string_to_array(name, '/'))[3] OR
+      EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin' AND company_id::text = (string_to_array(name, '/'))[1])
+    )
+  );
