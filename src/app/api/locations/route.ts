@@ -61,17 +61,37 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Get locations joined with profile names, only for locations updated in the last 10 minutes
+  // Get locations updated in the last 10 minutes
   const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
-  const { data, error } = await supabase
+  const { data: locations, error } = await supabase
     .from("employee_locations")
-    .select("*, profile:profiles!employee_locations_user_id_fkey(id, full_name)")
+    .select("*")
     .gte("updated_at", tenMinutesAgo);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ locations: data ?? [] });
+  // Fetch profile names separately (no FK from employee_locations to profiles)
+  const userIds = (locations ?? []).map((l) => l.user_id);
+  let profileMap: Record<string, { id: string; full_name: string }> = {};
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+
+    for (const p of profiles ?? []) {
+      profileMap[p.id] = p;
+    }
+  }
+
+  const enriched = (locations ?? []).map((loc) => ({
+    ...loc,
+    profile: profileMap[loc.user_id] ?? null,
+  }));
+
+  return NextResponse.json({ locations: enriched });
 }
