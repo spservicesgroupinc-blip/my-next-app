@@ -27,7 +27,8 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [jobName, setJobName] = useState("");
   const [dueDate, setDueDate] = useState(initialDate || "");
-  const [priority, setPriority] = useState<"Low" | "Medium" | "High" | "Critical">("Medium");
+  // UI uses 3 levels; maps to DB values: Normal→Medium, High→High, Urgent→Critical
+  const [priorityUI, setPriorityUI] = useState<"Normal" | "High" | "Urgent">("Normal");
   const [showDetails, setShowDetails] = useState(!!initialDate);
 
   // Line items (checklist)
@@ -133,6 +134,12 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
     setLineItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const priorityToDB = (ui: "Normal" | "High" | "Urgent"): "Low" | "Medium" | "High" | "Critical" => {
+    if (ui === "High") return "High";
+    if (ui === "Urgent") return "Critical";
+    return "Medium";
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -140,7 +147,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
       title: title.trim(),
       job_name: jobName.trim() || "General",
       due_date: dueDate || new Date().toISOString().split("T")[0],
-      priority,
+      priority: priorityToDB(priorityUI),
       assigned_to: assignedTo || null,
       checklist: lineItems,
     });
@@ -228,6 +235,32 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
             </div>
           </div>
 
+          {/* Priority — always visible, 3 simple options */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-2">Priority</label>
+            <div className="flex gap-2">
+              {(["Normal", "High", "Urgent"] as const).map((p) => {
+                const styles = {
+                  Normal: { active: "bg-slate-800 text-white", inactive: "bg-slate-100 text-slate-500" },
+                  High: { active: "bg-amber-500 text-white", inactive: "bg-slate-100 text-slate-500" },
+                  Urgent: { active: "bg-red-500 text-white", inactive: "bg-slate-100 text-slate-500" },
+                };
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPriorityUI(p)}
+                    className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all active:scale-[0.97] ${
+                      priorityUI === p ? styles[p].active : styles[p].inactive
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Optional Details Toggle */}
           <button
             type="button"
@@ -235,7 +268,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
             className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600 transition-colors w-full border-t border-slate-100 pt-3 mt-1 active:scale-[0.98]"
           >
             {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            {showDetails ? "Hide details" : "Add details (optional)"}
+            {showDetails ? "Hide details" : "Add details (assign, job, date)"}
           </button>
 
           {showDetails && (<>
@@ -377,35 +410,16 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Priority
-              </label>
-              <select
-                value={priority}
-                onChange={(e) =>
-                  setPriority(e.target.value as "Low" | "Medium" | "High" | "Critical")
-                }
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
-              >
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-                <option>Critical</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Due Date
-              </label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Due Date
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
           </div>
           </>)}
 

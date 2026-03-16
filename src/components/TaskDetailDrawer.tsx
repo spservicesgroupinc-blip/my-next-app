@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Trash2, Calendar, User, Briefcase, AlertTriangle,
-  Plus, Clock, CheckCircle2, Save, Download
+  Plus, Clock, CheckCircle2,
 } from "lucide-react";
 import { Task, ChecklistItem, Profile, Job } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
@@ -18,12 +18,25 @@ interface TaskDetailDrawerProps {
   onClose: () => void;
 }
 
-const PRIORITY_OPTS = ["Low", "Medium", "High", "Critical"] as const;
-const PRIORITY_COLORS: Record<string, string> = {
-  Low: "text-slate-500 bg-slate-100",
-  Medium: "text-blue-600 bg-blue-100",
-  High: "text-amber-500 bg-amber-100",
-  Critical: "text-red-600 bg-red-100",
+// 3 UI priority levels map to DB values for simplicity
+const PRIORITY_UI = ["Normal", "High", "Urgent"] as const;
+type PriorityUI = typeof PRIORITY_UI[number];
+
+function toPriorityUI(db: Task["priority"]): PriorityUI {
+  if (db === "Low" || db === "Medium") return "Normal";
+  if (db === "High") return "High";
+  return "Urgent";
+}
+function toPriorityDB(ui: PriorityUI): Task["priority"] {
+  if (ui === "High") return "High";
+  if (ui === "Urgent") return "Critical";
+  return "Medium";
+}
+
+const PRIORITY_COLORS: Record<PriorityUI, string> = {
+  Normal: "text-slate-600 bg-slate-100",
+  High: "text-amber-600 bg-amber-100",
+  Urgent: "text-red-600 bg-red-100",
 };
 
 function timeAgo(iso: string): string {
@@ -50,12 +63,10 @@ export default function TaskDetailDrawer({
   const [newItemText, setNewItemText] = useState("");
   const [showAddItem, setShowAddItem] = useState(false);
   const [localTask, setLocalTask] = useState<Task>(task);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Keep localTask in sync with parent (Realtime updates)
-  useEffect(() => { setLocalTask(task); setHasUnsavedChanges(false); }, [task]);
+  useEffect(() => { setLocalTask(task); }, [task]);
 
   useEffect(() => {
     async function fetchOptions() {
@@ -79,38 +90,10 @@ export default function TaskDetailDrawer({
   const completedCount = localTask.checklist.filter((c) => c.completed).length;
   const pct = localTask.checklist.length > 0 ? completedCount / localTask.checklist.length : 0;
 
-  // Deep compare checklist to detect unsaved changes
-  function checklistsEqual(a: ChecklistItem[], b: ChecklistItem[]): boolean {
-    if (a.length !== b.length) return false;
-    return a.every((item, i) => 
-      item.id === b[i].id && item.text === b[i].text && item.completed === b[i].completed
-    );
-  }
-
   function save(updates: Partial<Task>) {
     const merged = { ...localTask, ...updates };
     setLocalTask(merged);
     onUpdate(task.id, updates);
-  }
-
-  function handleManualSave() {
-    // Force a sync to Supabase by re-sending current localTask state
-    const updates: Partial<Task> = {};
-    if (localTask.title !== task.title) updates.title = localTask.title;
-    if (localTask.assigned_to !== task.assigned_to) updates.assigned_to = localTask.assigned_to;
-    if (localTask.job_name !== task.job_name) updates.job_name = localTask.job_name;
-    if (localTask.priority !== task.priority) updates.priority = localTask.priority;
-    if (localTask.due_date !== task.due_date) updates.due_date = localTask.due_date;
-    if (localTask.status !== task.status) updates.status = localTask.status;
-    if (!checklistsEqual(localTask.checklist, task.checklist)) {
-      updates.checklist = localTask.checklist;
-    }
-    
-    if (Object.keys(updates).length > 0) {
-      setIsSaving(true);
-      onUpdate(task.id, updates);
-      setTimeout(() => setIsSaving(false), 500);
-    }
   }
 
   function handleToggleChecklist(itemId: string) {
@@ -193,26 +176,12 @@ export default function TaskDetailDrawer({
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusColors[localTask.status]}`}>
                 {statusLabels[localTask.status]}
               </span>
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium flex items-center gap-1 ${PRIORITY_COLORS[localTask.priority]}`}>
-                {localTask.priority === "Critical" && <AlertTriangle className="h-3 w-3" />}
-                {localTask.priority}
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${PRIORITY_COLORS[toPriorityUI(localTask.priority)]}`}>
+                {toPriorityUI(localTask.priority)}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0 mt-0.5">
-            <button
-              onClick={handleManualSave}
-              disabled={isSaving}
-              className={`p-2 rounded-lg transition-colors ${
-                isSaving
-                  ? "bg-orange-100 text-orange-600"
-                  : "text-slate-400 hover:text-orange-600 hover:bg-orange-50"
-              }`}
-              aria-label="Save changes"
-              title="Save changes to Supabase"
-            >
-              <Save className="h-4 w-4" />
-            </button>
             <button
               onClick={() => { onDelete(task.id); onClose(); }}
               className="p-2 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -304,13 +273,13 @@ export default function TaskDetailDrawer({
                 <AlertTriangle className="h-4 w-4 text-slate-400" />
                 <span className="text-xs font-medium text-slate-500">Priority</span>
               </div>
-              <div className="flex gap-1.5 flex-wrap">
-                {PRIORITY_OPTS.map((p) => (
+              <div className="flex gap-1.5">
+                {PRIORITY_UI.map((p) => (
                   <button
                     key={p}
-                    onClick={() => save({ priority: p })}
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all ${
-                      localTask.priority === p
+                    onClick={() => save({ priority: toPriorityDB(p) })}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+                      toPriorityUI(localTask.priority) === p
                         ? PRIORITY_COLORS[p] + " ring-2 ring-offset-1 ring-current"
                         : "bg-slate-100 text-slate-400 hover:bg-slate-200"
                     }`}
