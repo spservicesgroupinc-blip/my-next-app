@@ -495,6 +495,20 @@ function HomeInner() {
     [user, supabase]
   );
 
+  const handleSendImage = useCallback(
+    async (imageUrl: string, text?: string) => {
+      if (!profile || !user) return;
+      const { error } = await supabase.from("chat_messages").insert({
+        sender_id: user.id,
+        text: text ?? "",
+        image_url: imageUrl,
+        company_id: profile.company_id,
+      });
+      if (error) console.error("Failed to send image:", error);
+    },
+    [supabase, profile, user]
+  );
+
   // ── Install handlers ─────────────────────────────────────────────────────────
 
   const handleInstall = async () => {
@@ -630,6 +644,8 @@ function HomeInner() {
             messages={chatMessages}
             onSend={handleSendMessage}
             currentUserId={user?.id ?? ""}
+            companyId={profile?.company_id ?? ""}
+            onSendImage={handleSendImage}
           />
         )}
         {activeTab === "calendar" && (

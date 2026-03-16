@@ -1,24 +1,57 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle, ImagePlus, X, Loader2 } from "lucide-react";
 import { ChatMessage } from "@/lib/types";
+import { usePhotoUpload } from "@/lib/usePhotoUpload";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatViewProps {
   messages: ChatMessage[];
   onSend: (text: string) => void;
   currentUserId: string;
+  onSendImage: (imageUrl: string, text?: string) => Promise<void>;
+  companyId: string;
 }
 
-export default function ChatView({ messages, onSend, currentUserId }: ChatViewProps) {
+export default function ChatView({ messages, onSend, currentUserId, onSendImage, companyId }: ChatViewProps) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { profile } = useAuth();
+  const { uploadPhoto, uploading: imageUploading, error: imageError } = usePhotoUpload("chat-images");
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
+  const [pendingImageName, setPendingImageName] = useState<string>("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    e.target.value = "";
+    const result = await uploadPhoto(file, companyId, `chat-${crypto.randomUUID()}`, profile.id);
+    if (result) {
+      setPendingImageUrl(result.publicUrl);
+      setPendingImageName(file.name);
+    }
+  };
+
+  const handleSendWithImage = async () => {
+    if (!pendingImageUrl) return;
+    await onSendImage(pendingImageUrl, input.trim() || undefined);
+    setPendingImageUrl(null);
+    setPendingImageName("");
+    setInput("");
+  };
+
   const handleSend = () => {
+    if (pendingImageUrl) {
+      handleSendWithImage();
+      return;
+    }
     if (!input.trim()) return;
     onSend(input.trim());
     setInput("");
@@ -131,6 +164,17 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
                       }`}
                     >
                       {msg.text}
+                      {msg.image_url && (
+                        <div className="mt-1.5">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={msg.image_url}
+                            alt="Shared image"
+                            className="max-w-[240px] rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(msg.image_url!, "_blank")}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -142,25 +186,57 @@ export default function ChatView({ messages, onSend, currentUserId }: ChatViewPr
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-200 bg-white/95 backdrop-blur-sm p-3">
-        <div className="flex items-center gap-2 max-w-3xl mx-auto">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            rows={1}
-            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all resize-none max-h-32"
-            style={{ minHeight: '48px' }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim()}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
-            aria-label="Send message"
-          >
-            <Send className="h-5 w-5" />
-          </button>
+      <div className="border-t border-slate-200 bg-white/95 backdrop-blur-sm">
+        {imageError && <p className="text-xs text-red-500 px-4 pb-1">{imageError}</p>}
+        {pendingImageUrl && (
+          <div className="px-4 py-2 flex items-center gap-2 bg-blue-50 border-t border-blue-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pendingImageUrl} alt="preview" className="h-12 w-12 rounded-lg object-cover border border-blue-200 flex-shrink-0" />
+            <span className="text-xs text-blue-600 flex-1 truncate">{pendingImageName}</span>
+            <button
+              onClick={() => { setPendingImageUrl(null); setPendingImageName(""); }}
+              className="p-1 text-blue-400 hover:text-blue-600 flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        <div className="p-3">
+          <div className="flex items-center gap-2 max-w-3xl mx-auto">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              rows={1}
+              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all resize-none max-h-32"
+              style={{ minHeight: '48px' }}
+            />
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              disabled={imageUploading}
+              className="p-2 rounded-xl text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0"
+              title="Send image"
+            >
+              {imageUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+            </button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              capture="environment"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() && !pendingImageUrl}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
+              aria-label="Send message"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
