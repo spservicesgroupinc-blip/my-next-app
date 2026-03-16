@@ -119,7 +119,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
       {/* Modal */}
       <div className="fixed inset-x-0 bottom-0 z-[160] mx-auto w-full max-w-lg">
         <div
-          className="m-4 rounded-t-2xl bg-white shadow-2xl"
+          className="m-4 rounded-t-2xl bg-white shadow-2xl max-h-[90dvh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
