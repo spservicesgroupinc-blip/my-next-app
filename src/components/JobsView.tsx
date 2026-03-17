@@ -19,6 +19,7 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
   const [showAddJob, setShowAddJob] = useState(autoOpenAdd ?? false);
   const [newJobName, setNewJobName] = useState("");
   const [addingJob, setAddingJob] = useState(false);
+  const [addJobError, setAddJobError] = useState("");
   const [jobTimeEntries, setJobTimeEntries] = useState<Record<string, TimeEntry[]>>({});
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
@@ -60,13 +61,24 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
   async function handleAddJob() {
     if (!newJobName.trim()) return;
     setAddingJob(true);
+    setAddJobError("");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setAddingJob(false); return; }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.company_id) { setAddingJob(false); return; }
     const { error } = await supabase
       .from("jobs")
-      .insert({ name: newJobName.trim(), is_active: true });
+      .insert({ name: newJobName.trim(), is_active: true, company_id: profile.company_id });
     if (!error) {
       setNewJobName("");
       setShowAddJob(false);
       fetchJobs();
+    } else {
+      setAddJobError(error.message);
     }
     setAddingJob(false);
   }
@@ -132,6 +144,9 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
           <label className="block text-xs font-medium text-slate-600 mb-2">
             New Job Name
           </label>
+          {addJobError && (
+            <p className="text-xs text-red-600 mb-2">{addJobError}</p>
+          )}
           <div className="flex gap-2">
             <input
               type="text"
@@ -152,6 +167,7 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
               onClick={() => {
                 setShowAddJob(false);
                 setNewJobName("");
+                setAddJobError("");
               }}
               className="rounded-lg border border-slate-200 px-3 py-2.5 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
             >
