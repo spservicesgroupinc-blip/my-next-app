@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { CheckCircle2, Trash2, CalendarDays, ChevronRight } from "lucide-react";
 import { Task } from "@/lib/types";
 
@@ -22,7 +23,7 @@ const formatDate = (dateStr: string) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-export default function TaskCard({ task, onToggleComplete, onDelete, onOpen }: TaskCardProps) {
+function TaskCard({ task, onToggleComplete, onDelete, onOpen }: TaskCardProps) {
   const completedCount = task.checklist.filter((c) => c.completed).length;
   const isCompleted = task.status === "completed";
 
@@ -46,6 +47,16 @@ export default function TaskCard({ task, onToggleComplete, onDelete, onOpen }: T
       : task.priority === "High"
       ? { label: "High", color: "bg-amber-100 text-amber-600" }
       : null;
+
+  const handleToggleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleComplete(task.id);
+  }, [onToggleComplete, task.id]);
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(task.id);
+  }, [onDelete, task.id]);
 
   return (
     <div
@@ -74,10 +85,7 @@ export default function TaskCard({ task, onToggleComplete, onDelete, onOpen }: T
 
         <div className="flex items-center gap-0.5">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleComplete(task.id);
-            }}
+            onClick={handleToggleClick}
             className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors active:scale-90 ${
               isCompleted
                 ? "text-emerald-500 bg-emerald-50"
@@ -88,10 +96,7 @@ export default function TaskCard({ task, onToggleComplete, onDelete, onOpen }: T
             <CheckCircle2 className="h-5 w-5" />
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(task.id);
-            }}
+            onClick={handleDeleteClick}
             className="flex h-10 w-10 items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors active:scale-90"
             aria-label="Delete task"
           >
@@ -152,3 +157,14 @@ export default function TaskCard({ task, onToggleComplete, onDelete, onOpen }: T
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+export default memo(TaskCard, (prevProps, nextProps) => {
+  // Only re-render if task data changed or callbacks changed
+  return (
+    prevProps.task === nextProps.task &&
+    prevProps.onToggleComplete === nextProps.onToggleComplete &&
+    prevProps.onDelete === nextProps.onDelete &&
+    prevProps.onOpen === nextProps.onOpen
+  );
+});

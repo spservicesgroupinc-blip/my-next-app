@@ -42,7 +42,16 @@ export default function TasksView({
 }: TasksViewProps) {
   const { profile } = useAuth();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Debounce search input (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Keep selectedTask in sync when parent tasks array is updated
   useEffect(() => {
@@ -52,8 +61,8 @@ export default function TasksView({
   }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredTasks = tasks.filter((t) => {
-    if (search === "") return true;
-    const q = search.toLowerCase();
+    if (debouncedSearch === "") return true;
+    const q = debouncedSearch.toLowerCase();
     return (
       t.title.toLowerCase().includes(q) ||
       (t.assignee?.full_name ?? "").toLowerCase().includes(q) ||
@@ -96,6 +105,12 @@ export default function TasksView({
             New
           </button>
         </div>
+        {/* Search result count */}
+        {debouncedSearch && (
+          <div className="mt-2 text-xs text-slate-500">
+            {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'} found
+          </div>
+        )}
       </div>
 
       {/* Task list */}

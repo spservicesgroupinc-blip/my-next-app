@@ -46,6 +46,7 @@ function HomeInner() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [retryKey, setRetryKey] = useState(0);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [updatingTasks, setUpdatingTasks] = useState<Set<string>>(new Set());
   const activeTabRef = useRef<TabId>("tasks");
 
   const addNotification = useCallback((item: Omit<NotificationItem, 'id' | 'read'>) => {
@@ -148,30 +149,46 @@ function HomeInner() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages" },
         async (payload) => {
-          // Skip if this is our own message (already added via optimistic update)
-          if (payload.new.sender_id === user?.id) return;
+          try {
+            // Skip if this is our own message (already added via optimistic update)
+            if (payload.new.sender_id === user?.id) return;
 
-          // Fetch the full message with sender profile
-          const { data } = await supabase
-            .from("chat_messages")
-            .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
-            .eq("id", payload.new.id)
-            .single();
-          if (data) {
-            setChatMessages((prev) => [...prev, data as ChatMessage]);
-            setUnreadChatCount((prev) => (activeTabRef.current !== "chat" ? prev + 1 : 0));
-            if (activeTabRef.current !== "chat") {
-              addNotification({
-                type: "message",
-                title: `New message from ${(data as ChatMessage).sender?.full_name ?? "Someone"}`,
-                body: (data as ChatMessage).text.slice(0, 80),
-                timestamp: new Date().toISOString(),
-              });
+            // Fetch the full message with sender profile
+            const { data, error } = await supabase
+              .from("chat_messages")
+              .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
+              .eq("id", payload.new.id)
+              .single();
+            
+            if (error) {
+              console.error("Failed to fetch realtime chat message:", error.message);
+              return;
             }
+            
+            if (data) {
+              setChatMessages((prev) => [...prev, data as ChatMessage]);
+              setUnreadChatCount((prev) => (activeTabRef.current !== "chat" ? prev + 1 : 0));
+              if (activeTabRef.current !== "chat") {
+                addNotification({
+                  type: "message",
+                  title: `New message from ${(data as ChatMessage).sender?.full_name ?? "Someone"}`,
+                  body: (data as ChatMessage).text.slice(0, 80),
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            }
+          } catch (err) {
+            console.error("Error processing realtime chat message:", err);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Chat messages realtime subscription active');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('Chat messages realtime subscription error, will retry...');
+        }
+      });
 
     // Tasks — listen for inserts, updates, deletes
     const taskSub = supabase
@@ -180,16 +197,26 @@ function HomeInner() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "tasks" },
         async (payload) => {
-          const { data } = await supabase
-            .from("tasks")
-            .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
-            .eq("id", payload.new.id)
-            .single();
-          if (data) {
-            setTasks((prev) => {
-              if (prev.some((t) => t.id === data.id)) return prev;
-              return [data as Task, ...prev];
-            });
+          try {
+            const { data, error } = await supabase
+              .from("tasks")
+              .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
+              .eq("id", payload.new.id)
+              .single();
+            
+            if (error) {
+              console.error("Failed to fetch realtime task insert:", error.message);
+              return;
+            }
+            
+            if (data) {
+              setTasks((prev) => {
+                if (prev.some((t) => t.id === data.id)) return prev;
+                return [data as Task, ...prev];
+              });
+            }
+          } catch (err) {
+            console.error("Error processing realtime task insert:", err);
           }
         }
       )
@@ -197,15 +224,25 @@ function HomeInner() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "tasks" },
         async (payload) => {
-          const { data } = await supabase
-            .from("tasks")
-            .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
-            .eq("id", payload.new.id)
-            .single();
-          if (data) {
-            setTasks((prev) =>
-              prev.map((t) => (t.id === data.id ? (data as Task) : t))
-            );
+          try {
+            const { data, error } = await supabase
+              .from("tasks")
+              .select("*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)")
+              .eq("id", payload.new.id)
+              .single();
+            
+            if (error) {
+              console.error("Failed to fetch realtime task update:", error.message);
+              return;
+            }
+            
+            if (data) {
+              setTasks((prev) =>
+                prev.map((t) => (t.id === data.id ? (data as Task) : t))
+              );
+            }
+          } catch (err) {
+            console.error("Error processing realtime task update:", err);
           }
         }
       )
@@ -216,7 +253,13 @@ function HomeInner() {
           setTasks((prev) => prev.filter((t) => t.id !== payload.old.id));
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Tasks realtime subscription active');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('Tasks realtime subscription error, will retry...');
+        }
+      });
 
     // Tab from URL
     const params = new URLSearchParams(window.location.search);
@@ -241,23 +284,48 @@ function HomeInner() {
 
   const handleToggleComplete = useCallback(
     async (taskId: string) => {
+      // Prevent duplicate operations
+      if (updatingTasks.has(taskId)) return;
+      
+      // Haptic feedback for mobile
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
+      
       const newStatus = task.status === "completed" ? "active" : "completed";
+      const previousTasks = tasks;
+      
+      // Optimistic update
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
       );
+      setUpdatingTasks((prev) => new Set(prev).add(taskId));
+      
       // Note: updated_at and updated_by are handled by database trigger
       const { error } = await supabase
         .from("tasks")
         .update({ status: newStatus })
         .eq("id", taskId);
+      
+      setUpdatingTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+      
       if (error) {
         console.error("Failed to toggle task:", error.message);
-        showToast("Failed to update task", "error");
+        setTasks(previousTasks); // Rollback on error
+        const errorMsg = error.message.includes('network') || error.message.includes('fetch')
+          ? "Network error. Please check your connection."
+          : "Failed to update task. Please try again.";
+        showToast(errorMsg, "error");
       }
     },
-    [tasks, supabase, showToast]
+    [tasks, supabase, showToast, updatingTasks]
   );
 
   const handleDeleteTask = useCallback(
@@ -270,17 +338,36 @@ function HomeInner() {
   const confirmDeleteTask = useCallback(
     async () => {
       if (!taskToDelete) return;
+      
+      const previousTasks = tasks;
       setTasks((prev) => prev.filter((t) => t.id !== taskToDelete));
-      await supabase.from("tasks").delete().eq("id", taskToDelete);
+      
+      const { error } = await supabase.from("tasks").delete().eq("id", taskToDelete);
+      
+      if (error) {
+        console.error("Failed to delete task:", error.message);
+        setTasks(previousTasks); // Rollback on error
+        const errorMsg = error.message.includes('network') || error.message.includes('fetch')
+          ? "Network error. Please check your connection."
+          : "Failed to delete task. Please try again.";
+        showToast(errorMsg, "error");
+        return;
+      }
+      
       showToast("Task deleted", "info");
       setTaskToDelete(null);
     },
-    [taskToDelete, supabase, showToast]
+    [taskToDelete, tasks, supabase, showToast]
   );
 
   const handleToggleChecklist = useCallback(
     async (taskId: string, itemId: string) => {
+      // Prevent duplicate operations
+      if (updatingTasks.has(taskId)) return;
+      
       let newChecklist: ChecklistItem[] | undefined;
+      const previousTasks = tasks;
+      
       setTasks((prev) =>
         prev.map((t) => {
           if (t.id !== taskId) return t;
@@ -291,28 +378,46 @@ function HomeInner() {
           return { ...t, checklist: updated };
         })
       );
+      setUpdatingTasks((prev) => new Set(prev).add(taskId));
+      
       if (newChecklist) {
         const { error } = await supabase
           .from("tasks")
           .update({ checklist: newChecklist })
           .eq("id", taskId);
+        
+        setUpdatingTasks((prev) => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+        
         if (error) {
           console.error("Failed to toggle checklist:", error.message);
-          showToast("Failed to update checklist", "error");
+          setTasks(previousTasks); // Rollback on error
+          const errorMsg = error.message.includes('network') || error.message.includes('fetch')
+            ? "Network error. Please check your connection."
+            : "Failed to update checklist. Please try again.";
+          showToast(errorMsg, "error");
         }
       }
     },
-    [supabase, showToast]
+    [tasks, supabase, showToast, updatingTasks]
   );
 
   const handleAddLineItem = useCallback(
     async (taskId: string, text: string) => {
+      // Prevent duplicate operations
+      if (updatingTasks.has(taskId)) return;
+      
       const newItem: ChecklistItem = {
         id: crypto.randomUUID(),
         text,
         completed: false,
       };
       let newChecklist: ChecklistItem[] | undefined;
+      const previousTasks = tasks;
+      
       setTasks((prev) =>
         prev.map((t) => {
           if (t.id !== taskId) return t;
@@ -321,37 +426,71 @@ function HomeInner() {
           return { ...t, checklist: updated };
         })
       );
+      setUpdatingTasks((prev) => new Set(prev).add(taskId));
+      
       if (newChecklist) {
         const { error } = await supabase
           .from("tasks")
           .update({ checklist: newChecklist })
           .eq("id", taskId);
+        
+        setUpdatingTasks((prev) => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+        
         if (error) {
           console.error("Failed to add checklist item:", error.message);
-          showToast("Failed to add checklist item", "error");
+          setTasks(previousTasks); // Rollback on error
+          const errorMsg = error.message.includes('network') || error.message.includes('fetch')
+            ? "Network error. Please check your connection."
+            : "Failed to add checklist item. Please try again.";
+          showToast(errorMsg, "error");
         }
       }
     },
-    [supabase, showToast]
+    [tasks, supabase, showToast, updatingTasks]
   );
 
   const handleUpdateTask = useCallback(
     async (taskId: string, updates: Partial<Pick<Task, "title" | "job_name" | "due_date" | "priority" | "status" | "assigned_to" | "checklist">>) => {
+      // Prevent duplicate operations
+      if (updatingTasks.has(taskId)) return;
+      
+      const previousTasks = tasks;
+      
       // Optimistic update
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
       );
+      setUpdatingTasks((prev) => new Set(prev).add(taskId));
+      
       // Note: updated_at and updated_by are handled by database trigger
       const { error } = await supabase
         .from("tasks")
         .update(updates)
         .eq("id", taskId);
+      
+      setUpdatingTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+      
       if (error) {
         console.error("Failed to update task:", error.message);
-        showToast("Failed to save changes", "error");
+        setTasks(previousTasks); // Rollback on error
+        let errorMsg = "Failed to save changes. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Changes saved locally.";
+        } else if (error.code === 'PGRST301') {
+          errorMsg = "You don't have permission to edit this task.";
+        }
+        showToast(errorMsg, "error");
       }
     },
-    [supabase, showToast]
+    [tasks, supabase, showToast, updatingTasks]
   );
 
   const handleAddTask = useCallback(
@@ -381,7 +520,13 @@ function HomeInner() {
         .single();
       if (error) {
         console.error("Failed to add task:", error.message);
-        showToast("Failed to create task", "error");
+        let errorMsg = "Failed to create task. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Please check your connection.";
+        } else if (error.code === 'PGRST301') {
+          errorMsg = "You don't have permission to create tasks.";
+        }
+        showToast(errorMsg, "error");
         return;
       }
       if (data) {
@@ -389,7 +534,7 @@ function HomeInner() {
         showToast("Task created", "success");
       }
     },
-    [user, supabase, showToast]
+    [user, profile, supabase, showToast]
   );
 
   // ── Time clock handlers ──────────────────────────────────────────────────────
@@ -397,11 +542,17 @@ function HomeInner() {
   const handleClockIn = useCallback(
     async (jobName: string) => {
       if (!user || !profile) return;
+      
+      if (!jobName || !jobName.trim()) {
+        showToast("Please select a job before clocking in", "error");
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("time_entries")
         .insert({
           user_id: user.id,
-          job_name: jobName,
+          job_name: jobName.trim(),
           clock_in: new Date().toISOString(),
           clock_out: null,
           hourly_rate: profile.hourly_rate,
@@ -411,7 +562,13 @@ function HomeInner() {
         .single();
       if (error) {
         console.error("Failed to clock in:", error.message);
-        showToast("Failed to clock in", "error");
+        let errorMsg = "Failed to clock in. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Please check your connection.";
+        } else if (error.code === 'PGRST301') {
+          errorMsg = "You don't have permission to log time.";
+        }
+        showToast(errorMsg, "error");
         return;
       }
       if (data) {
@@ -424,17 +581,36 @@ function HomeInner() {
 
   const handleClockOut = useCallback(
     async (entryId: string) => {
+      const entry = timeEntries.find((e) => e.id === entryId);
+      if (!entry) return;
+      
       const clockOut = new Date().toISOString();
+      const previousEntries = timeEntries;
+      
+      // Optimistic update
       setTimeEntries((prev) =>
         prev.map((e) => (e.id === entryId ? { ...e, clock_out: clockOut } : e))
       );
-      showToast("Clocked out", "info");
-      await supabase
+      
+      const { error } = await supabase
         .from("time_entries")
         .update({ clock_out: clockOut })
         .eq("id", entryId);
+      
+      if (error) {
+        console.error("Failed to clock out:", error.message);
+        setTimeEntries(previousEntries); // Rollback on error
+        let errorMsg = "Failed to clock out. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Please check your connection.";
+        }
+        showToast(errorMsg, "error");
+        return;
+      }
+      
+      showToast("Clocked out", "info");
     },
-    [supabase, showToast]
+    [timeEntries, supabase, showToast]
   );
 
   const handleAddTimeEntry = useCallback(
@@ -447,11 +623,17 @@ function HomeInner() {
       notes: string;
     }) => {
       if (!user || !profile) return;
+      
+      if (!entry.job_name || !entry.job_name.trim()) {
+        showToast("Please select a job", "error");
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("time_entries")
         .insert({
           user_id: user.id,
-          job_name: entry.job_name,
+          job_name: entry.job_name.trim(),
           clock_in: entry.clock_in,
           clock_out: entry.clock_out,
           hourly_rate: entry.hourly_rate,
@@ -462,7 +644,13 @@ function HomeInner() {
         .single();
       if (error) {
         console.error("Failed to add time entry:", error.message);
-        showToast("Failed to log time", "error");
+        let errorMsg = "Failed to log time. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Please check your connection.";
+        } else if (error.code === 'PGRST301') {
+          errorMsg = "You don't have permission to log time.";
+        }
+        showToast(errorMsg, "error");
         return;
       }
       if (data) {
@@ -479,25 +667,36 @@ function HomeInner() {
   const handleSendMessage = useCallback(
     async (text: string) => {
       if (!user) return;
+      
+      if (!text || !text.trim()) return;
+      
       const { data, error } = await supabase
         .from("chat_messages")
-        .insert({ sender_id: user.id, text, company_id: profile!.company_id })
+        .insert({ sender_id: user.id, text: text.trim(), company_id: profile!.company_id })
         .select("*, sender:profiles!chat_messages_sender_id_fkey(id, full_name)")
         .single();
       if (error) {
         console.error("Failed to send message:", error.message);
+        let errorMsg = "Failed to send message. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Message not sent.";
+        } else if (error.code === 'PGRST301') {
+          errorMsg = "You don't have permission to send messages.";
+        }
+        showToast(errorMsg, "error");
         return;
       }
       if (data) {
         setChatMessages((prev) => [...prev, data as ChatMessage]);
       }
     },
-    [user, supabase]
+    [user, profile, supabase, showToast]
   );
 
   const handleSendImage = useCallback(
     async (imageUrl: string, text?: string) => {
       if (!profile || !user) return;
+      
       const { data, error } = await supabase
         .from("chat_messages")
         .insert({
@@ -510,13 +709,18 @@ function HomeInner() {
         .single();
       if (error) {
         console.error("Failed to send image:", error);
+        let errorMsg = "Failed to send image. Please try again.";
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMsg = "Network error. Image not sent.";
+        }
+        showToast(errorMsg, "error");
         return;
       }
       if (data) {
         setChatMessages((prev) => [...prev, data as ChatMessage]);
       }
     },
-    [supabase, profile, user]
+    [supabase, profile, user, showToast]
   );
 
   // ── Install handlers ─────────────────────────────────────────────────────────
