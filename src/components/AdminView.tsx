@@ -587,7 +587,7 @@ export default function AdminView() {
             onClick={() => setAdminTab("live")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "live"
-                ? "bg-white text-orange-600 shadow-sm"
+                ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -598,7 +598,7 @@ export default function AdminView() {
             onClick={() => setAdminTab("employees")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "employees"
-                ? "bg-white text-orange-600 shadow-sm"
+                ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -609,7 +609,7 @@ export default function AdminView() {
             onClick={() => setAdminTab("jobs")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "jobs"
-                ? "bg-white text-orange-600 shadow-sm"
+                ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -620,7 +620,7 @@ export default function AdminView() {
             onClick={() => setAdminTab("map")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "map"
-                ? "bg-white text-orange-600 shadow-sm"
+                ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -631,7 +631,7 @@ export default function AdminView() {
             onClick={() => setAdminTab("payreports")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "payreports"
-                ? "bg-white text-orange-600 shadow-sm"
+                ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -680,7 +680,7 @@ export default function AdminView() {
               </p>
             </div>
             <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-2xl font-bold text-blue-600">
                 {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
               </p>
               <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
@@ -697,7 +697,7 @@ export default function AdminView() {
                 <h3 className="text-sm font-semibold text-slate-700">Employee Status</h3>
                 <button
                   onClick={loadEmployees}
-                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-600 transition-colors"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   Refresh
@@ -729,7 +729,7 @@ export default function AdminView() {
                         {/* Header */}
                         <div className="flex items-center gap-2.5">
                           {/* Avatar initials */}
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 text-xs font-bold shrink-0 shadow-sm">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-yellow-100 to-yellow-50 text-blue-600 text-xs font-bold shrink-0 shadow-sm">
                               {emp.full_name
                                 .split(" ")
                                 .map((n) => n[0])
@@ -814,7 +814,7 @@ export default function AdminView() {
             {/* Right: Activity feed (42%) */}
             <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto lg:w-[42%]">
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Activity className="h-4 w-4 text-orange-600" />
+                <Activity className="h-4 w-4 text-blue-600" />
                 <h3 className="text-sm font-semibold text-slate-700">Activity Feed</h3>
                 <span className="flex items-center gap-1 ml-auto text-[10px] font-medium text-emerald-600">
                   <span className="flex h-1.5 w-1.5">
@@ -904,7 +904,7 @@ export default function AdminView() {
             </h3>
             <button
               onClick={() => setShowAddEmployee(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-orange-700 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
             >
               <UserPlus className="h-3.5 w-3.5" />
               Add Employee
@@ -916,7 +916,7 @@ export default function AdminView() {
               key={emp.id}
               type="button"
               onClick={() => openEditEmployee(emp)}
-              className={`rounded-xl bg-white border p-3 shadow-sm text-left w-full transition-colors hover:border-orange-300 ${
+              className={`rounded-xl bg-white border p-3 shadow-sm text-left w-full transition-colors hover:border-blue-300 ${
                 emp.is_active ? "border-slate-100" : "border-slate-200 opacity-60"
               }`}
             >
@@ -930,7 +930,7 @@ export default function AdminView() {
                       </span>
                     )}
                     {emp.role === "admin" && (
-                      <span className="ml-2 text-[10px] font-medium text-orange-600 uppercase">
+                      <span className="ml-2 text-[10px] font-medium text-blue-600 uppercase">
                         Admin
                       </span>
                     )}
@@ -968,13 +968,13 @@ export default function AdminView() {
               value={newJobName}
               onChange={(e) => setNewJobName(e.target.value)}
               placeholder="New job name..."
-              className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               required
             />
             <button
               type="submit"
               disabled={addingJob}
-              className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-orange-700 transition-colors disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
               <Plus className="h-3.5 w-3.5" />
               Add
@@ -1009,7 +1009,7 @@ export default function AdminView() {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <Briefcase className={`h-4 w-4 ${job.is_active ? "text-orange-500" : "text-slate-300"}`} />
+                      <Briefcase className={`h-4 w-4 ${job.is_active ? "text-blue-500" : "text-slate-300"}`} />
                       <span className="text-sm font-medium text-slate-900">{job.name}</span>
                       {!job.is_active && (
                         <span className="text-[10px] font-medium text-slate-400 uppercase">
@@ -1079,11 +1079,11 @@ export default function AdminView() {
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-orange-500" />
+                <FileText className="h-5 w-5 text-blue-500" />
                 <h3 className="text-sm font-semibold text-slate-900">Pay Report Submissions</h3>
               </div>
               {paySubmissions.length > 0 && (
-                <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700">
+                <span className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                   {paySubmissions.filter((s) => s.status === "submitted").length} pending
                 </span>
               )}
@@ -1091,7 +1091,7 @@ export default function AdminView() {
 
             {paySubsLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
               </div>
             ) : paySubmissions.length === 0 ? (
               <div className="py-10 text-center">
@@ -1197,7 +1197,7 @@ export default function AdminView() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="e.g. Mike Johnson"
                 />
               </div>
@@ -1210,7 +1210,7 @@ export default function AdminView() {
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="mike@company.com"
                 />
               </div>
@@ -1224,7 +1224,7 @@ export default function AdminView() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="Min 6 characters"
                 />
               </div>
@@ -1238,13 +1238,13 @@ export default function AdminView() {
                   onChange={(e) => setNewRate(e.target.value)}
                   min="0"
                   step="0.5"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={addLoading}
-                className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 disabled:opacity-60"
+                className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 disabled:opacity-60"
               >
                 {addLoading ? "Creating…" : "Create Employee"}
               </button>
@@ -1300,7 +1300,7 @@ export default function AdminView() {
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -1313,7 +1313,7 @@ export default function AdminView() {
                   onChange={(e) => setEditRate(e.target.value)}
                   min="0"
                   step="0.5"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -1323,7 +1323,7 @@ export default function AdminView() {
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value as "admin" | "employee")}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="employee">Employee</option>
                   <option value="admin">Admin</option>
@@ -1363,7 +1363,7 @@ export default function AdminView() {
                     {editEmployee.activeTasks.map((t) => (
                       <span
                         key={t.id}
-                        className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700"
+                        className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-medium text-blue-700"
                       >
                         <ClipboardList className="h-2.5 w-2.5" />
                         {t.title.length > 30 ? t.title.slice(0, 30) + "…" : t.title}
@@ -1385,7 +1385,7 @@ export default function AdminView() {
               <button
                 type="submit"
                 disabled={editSaving}
-                className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-orange-700 disabled:opacity-60"
+                className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 disabled:opacity-60"
               >
                 {editSaving ? "Saving…" : "Save Changes"}
               </button>

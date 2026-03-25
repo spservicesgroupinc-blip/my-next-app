@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "ProTask - Project Management for Contractors",
-  "short_name": "ProTask",
+  "name": "DC FOAM - Foam Services",
+  "short_name": "DC FOAM",
   "description": "Task management app for contractors with time tracking, chat, and calendar",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f8fafc",
-  "theme_color": "#ea580c",
+  "theme_color": "#2563eb",
   "categories": ["business", "productivity"],
   "prefer_related_applications": false,
   "icons": [

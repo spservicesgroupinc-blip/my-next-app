@@ -140,7 +140,7 @@ export default function ChatView({ messages, onSend, currentUserId, onSendImage,
                 <div className={`flex gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}>
                   <div
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-md ${
-                      isMe ? "bg-gradient-to-br from-orange-500 to-orange-600" : getAvatarColor(senderName)
+                      isMe ? "bg-gradient-to-br from-blue-600 to-blue-900" : getAvatarColor(senderName)
                     }`}
                   >
                     {getInitials(senderName)}
@@ -149,7 +149,7 @@ export default function ChatView({ messages, onSend, currentUserId, onSendImage,
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`text-xs font-semibold ${
-                          isMe ? "text-orange-600" : "text-slate-700"
+                          isMe ? "text-blue-600" : "text-slate-700"
                         }`}
                       >
                         {isMe ? "You" : senderName}
@@ -159,7 +159,7 @@ export default function ChatView({ messages, onSend, currentUserId, onSendImage,
                     <div
                       className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                         isMe
-                          ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-tr-sm"
+                          ? "bg-gradient-to-br from-blue-600 to-blue-900 text-white rounded-tr-sm"
                           : "bg-white text-slate-800 border border-slate-100 rounded-tl-sm hover:shadow-md transition-shadow"
                       }`}
                     >
@@ -209,7 +209,7 @@ export default function ChatView({ messages, onSend, currentUserId, onSendImage,
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               rows={1}
-              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all resize-none max-h-32"
+              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none max-h-32"
               style={{ minHeight: '48px' }}
             />
             <button
@@ -231,7 +231,7 @@ export default function ChatView({ messages, onSend, currentUserId, onSendImage,
             <button
               onClick={handleSend}
               disabled={!input.trim() && !pendingImageUrl}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-600/30 transition-all hover:shadow-lg hover:shadow-orange-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-900 text-white shadow-md shadow-blue-600/30 transition-all hover:shadow-lg hover:shadow-blue-600/40 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
               aria-label="Send message"
             >
               <Send className="h-5 w-5" />

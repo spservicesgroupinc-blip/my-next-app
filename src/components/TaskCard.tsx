@@ -143,7 +143,7 @@ function TaskCard({ task, onToggleComplete, onDelete, onOpen }: TaskCardProps) {
 
       {/* Footer */}
       <div className="mt-2.5 pt-2.5 border-t border-slate-50 flex items-center gap-2">
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[9px] font-bold text-orange-600 shrink-0">
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-100 text-[9px] font-bold text-blue-600 shrink-0">
           {assigneeInitials}
         </div>
         <span className="text-[11px] text-slate-500 truncate">{assigneeName}</span>

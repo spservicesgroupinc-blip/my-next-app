@@ -12,7 +12,7 @@ import type { PayReportData } from "@/lib/types";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const colors = {
-  primary: "#ea580c",
+  primary: "#2563eb",
   dark: "#0f172a",
   medium: "#475569",
   light: "#94a3b8",
@@ -184,7 +184,7 @@ export function PayReportPDF({ data }: PayReportPDFProps) {
     <Document
       title={`Pay Report — ${employee.full_name} — ${fmtDate(period_start)} to ${fmtDate(period_end)}`}
       author={company.name}
-      creator="ProTask Pay System"
+      creator="DC FOAM Pay System"
     >
       <Page size="LETTER" orientation="landscape" style={styles.page}>
 

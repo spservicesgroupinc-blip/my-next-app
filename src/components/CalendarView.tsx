@@ -90,21 +90,21 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
             onClick={() => setSelectedDay(d)}
             className={`relative flex flex-col items-center justify-center py-3 rounded-xl transition-all active:scale-95 min-h-[52px] ${
               !inMonth ? "text-slate-300" : "text-slate-700 hover:bg-slate-100"
-            } ${today ? "bg-orange-50 font-bold" : ""} ${
-              selectedDay && isSameDay(d, selectedDay) ? "ring-2 ring-orange-500 bg-orange-50" : ""
+            } ${today ? "bg-yellow-50 font-bold" : ""} ${
+              selectedDay && isSameDay(d, selectedDay) ? "ring-2 ring-blue-500 bg-yellow-50" : ""
             }`}
           >
             <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-              today ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md" : 
+              today ? "bg-gradient-to-br from-blue-600 to-blue-900 text-white shadow-md" :
               inMonth ? "text-slate-700" : "text-slate-300"
             }`}>
               {format(d, "d")}
             </span>
             {dayTasks.length === 1 && (
-              <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 mt-1 shadow-sm" />
+              <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 mt-1 shadow-sm" />
             )}
             {dayTasks.length > 1 && (
-              <span className="text-[8px] font-bold text-orange-600 leading-none mt-1">{dayTasks.length}</span>
+              <span className="text-[8px] font-bold text-blue-600 leading-none mt-1">{dayTasks.length}</span>
             )}
           </button>
         );
@@ -141,7 +141,7 @@ export default function CalendarView({ tasks, onAddTask }: CalendarViewProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-orange-600/20 hover:shadow-lg hover:shadow-orange-600/30 transition-all active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-900 px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all active:scale-95"
               >
                 <Plus className="h-4 w-4" />
                 Add Task

@@ -180,7 +180,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
               placeholder="e.g. Install kitchen cabinets"
               autoFocus
               required
@@ -220,14 +220,14 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                     addLineItem();
                   }
                 }}
-                className="flex-1 rounded-xl border border-dashed border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+                className="flex-1 rounded-xl border border-dashed border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 placeholder="Add a line item..."
               />
               <button
                 type="button"
                 onClick={addLineItem}
                 disabled={!newLineItem.trim()}
-                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-orange-100 hover:text-orange-600 disabled:opacity-30 transition-all active:scale-95"
+                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-yellow-100 hover:text-blue-600 disabled:opacity-30 transition-all active:scale-95"
                 aria-label="Add line item"
               >
                 <Plus className="h-5 w-5" />
@@ -265,7 +265,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
-            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600 transition-colors w-full border-t border-slate-100 pt-3 mt-1 active:scale-[0.98]"
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-blue-600 transition-colors w-full border-t border-slate-100 pt-3 mt-1 active:scale-[0.98]"
           >
             {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             {showDetails ? "Hide details" : "Add details (assign, job, date)"}
@@ -289,7 +289,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   setShowNewEmployee(false);
                 }
               }}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
             >
               <option value="">— Unassigned —</option>
               {employees.map((emp) => (
@@ -301,7 +301,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
             </select>
 
             {showNewEmployee && (
-              <div className="mt-2 rounded-xl border border-orange-200 bg-orange-50 p-3 space-y-2">
+              <div className="mt-2 rounded-xl border border-yellow-200 bg-yellow-50 p-3 space-y-2">
                 <p className="text-xs font-semibold text-slate-700 mb-1">Quick Add Employee</p>
                 {addEmpError && (
                   <p className="text-xs text-red-600 font-medium">{addEmpError}</p>
@@ -311,21 +311,21 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   value={newEmpName}
                   onChange={(e) => setNewEmpName(e.target.value)}
                   placeholder="Full name"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <input
                   type="email"
                   value={newEmpEmail}
                   onChange={(e) => setNewEmpEmail(e.target.value)}
                   placeholder="Email"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <input
                   type="password"
                   value={newEmpPassword}
                   onChange={(e) => setNewEmpPassword(e.target.value)}
                   placeholder="Password (min 6 chars)"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <input
                   type="number"
@@ -334,14 +334,14 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   placeholder="Hourly rate"
                   min="0"
                   step="0.5"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleAddEmployee}
                     disabled={addingEmployee || !newEmpName.trim() || !newEmpEmail.trim() || !newEmpPassword}
-                    className="flex-1 rounded-lg bg-orange-600 py-2.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50 transition-all active:scale-[0.98]"
+                    className="flex-1 rounded-lg bg-blue-600 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-[0.98]"
                   >
                     {addingEmployee ? "Creating…" : "Create"}
                   </button>
@@ -372,7 +372,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   setShowNewJob(false);
                 }
               }}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
             >
               <option value="">— Select a Job (optional) —</option>
               {jobNames.map((j) => (
@@ -388,14 +388,14 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
                   value={newJobName}
                   onChange={(e) => setNewJobName(e.target.value)}
                   placeholder="New job name"
-                  className="flex-1 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="flex-1 rounded-lg border border-blue-300 bg-yellow-50 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleAddJob}
                   disabled={addingJob || !newJobName.trim()}
-                  className="rounded-lg bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50 transition-all active:scale-[0.98]"
+                  className="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-[0.98]"
                 >
                   {addingJob ? "…" : "Add"}
                 </button>
@@ -418,7 +418,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
           </div>
           </>)}
@@ -426,7 +426,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate }: AddTaskMod
           <button
             type="submit"
             disabled={!title.trim()}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 py-3.5 text-sm font-semibold text-white shadow-md shadow-orange-600/20 transition-all hover:shadow-lg hover:shadow-orange-600/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-900 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:shadow-blue-600/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             <CheckCircle2 className="h-5 w-5" />
             Create Task

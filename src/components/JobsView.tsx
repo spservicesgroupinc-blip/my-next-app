@@ -131,7 +131,7 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
         <h2 className="text-lg font-bold text-slate-900">Jobs</h2>
         <button
           onClick={() => setShowAddJob(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-700 transition-colors"
+          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
           Add Job
@@ -140,7 +140,7 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
 
       {/* Add Job Form */}
       {showAddJob && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
           <label className="block text-xs font-medium text-slate-600 mb-2">
             New Job Name
           </label>
@@ -153,13 +153,13 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
               value={newJobName}
               onChange={(e) => setNewJobName(e.target.value)}
               placeholder="Enter job name"
-              className="flex-1 rounded-lg border border-orange-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="flex-1 rounded-lg border border-blue-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               autoFocus
             />
             <button
               onClick={handleAddJob}
               disabled={addingJob || !newJobName.trim()}
-              className="rounded-lg bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
+              className="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {addingJob ? "…" : "Save"}
             </button>
@@ -180,7 +180,7 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
       {/* Jobs List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
         </div>
       ) : jobs.length === 0 ? (
         <div className="py-12 flex flex-col items-center gap-3">
@@ -212,12 +212,12 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
                   <div className="flex items-center gap-3 flex-1">
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                        job.is_active ? "bg-orange-100" : "bg-slate-200"
+                        job.is_active ? "bg-yellow-100" : "bg-slate-200"
                       }`}
                     >
                       <Briefcase
                         className={`h-5 w-5 ${
-                          job.is_active ? "text-orange-600" : "text-slate-400"
+                          job.is_active ? "text-blue-600" : "text-slate-400"
                         }`}
                       />
                     </div>
@@ -241,7 +241,7 @@ export default function JobsView({ onClose, onSelectJob, autoOpenAdd }: JobsView
                         onSelectJob(job.name);
                         onClose();
                       }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-50 text-blue-600 hover:bg-yellow-100 transition-colors"
                       aria-label="Select for time entry"
                     >
                       <CheckCircle2 className="h-4 w-4" />

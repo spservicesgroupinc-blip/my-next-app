@@ -152,7 +152,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                       setShowNewJob(false);
                     }
                   }}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {jobNames.length === 0 ? (
                     <option value="">No jobs available</option>
@@ -175,14 +175,14 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                       value={newJobName}
                       onChange={(e) => setNewJobName(e.target.value)}
                       placeholder="New job name"
-                      className="flex-1 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none"
+                      className="flex-1 rounded-md border border-blue-300 bg-yellow-50 px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={handleAddJob}
                       disabled={addingJob || !newJobName.trim()}
-                      className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                      className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                     >
                       {addingJob ? "…" : "Add"}
                     </button>
@@ -207,7 +207,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -222,7 +222,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -234,16 +234,16 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
               {/* Hours Summary */}
-              <div className="rounded-lg bg-orange-50 border border-orange-100 px-4 py-3">
+              <div className="rounded-lg bg-yellow-50 border border-yellow-100 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-600">Total Hours</span>
-                  <span className="text-xl font-bold text-orange-600">{hours.toFixed(2)}h</span>
+                  <span className="text-xl font-bold text-blue-600">{hours.toFixed(2)}h</span>
                 </div>
               </div>
 
@@ -259,7 +259,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                   min="0"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -273,7 +273,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add any notes about this time entry..."
                   rows={3}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                 />
               </div>
 
@@ -296,7 +296,7 @@ export default function TimeEntryModal({ onClose, onAddTime }: TimeEntryModalPro
                 <button
                   type="submit"
                   disabled={submitting || hours <= 0 || !selectedJob}
-                  className="flex-1 rounded-lg bg-orange-600 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   {submitting ? "Saving…" : "Save Entry"}
                 </button>

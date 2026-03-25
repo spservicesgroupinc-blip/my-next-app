@@ -69,10 +69,10 @@ export default function NotificationDrawer({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4">
           <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-orange-600" />
+            <Bell className="h-5 w-5 text-blue-600" />
             <h2 className="text-base font-bold text-slate-900">Notifications</h2>
             {unreadCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-600 px-1 text-[10px] font-bold text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
                 {unreadCount}
               </span>
             )}
@@ -103,7 +103,7 @@ export default function NotificationDrawer({
                   <li
                     key={n.id}
                     className={`flex gap-3 px-4 py-3.5 transition-colors ${
-                      !n.read ? "bg-orange-50/60" : ""
+                      !n.read ? "bg-yellow-50/60" : ""
                     }`}
                   >
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
@@ -121,7 +121,7 @@ export default function NotificationDrawer({
                       </p>
                     </div>
                     {!n.read && (
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-orange-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                     )}
                   </li>
                 );

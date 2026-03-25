@@ -31,7 +31,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, 
     const Icon = tab.icon;
     const isActive = activeTab === tab.id;
     const isAdminTab = tab.id === "admin";
-    const activeColor = isAdminTab ? "text-blue-600" : "text-orange-600";
+    const activeColor = isAdminTab ? "text-blue-600" : "text-blue-600";
     const showBadge = tab.id === "chat" && unreadChatCount > 0;
     return (
       <button
@@ -47,7 +47,7 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, 
         <span className="relative">
           <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
           {showBadge && (
-            <span className="absolute -top-1.5 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white leading-none">
+            <span className="absolute -top-1.5 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white leading-none">
               {unreadChatCount > 9 ? "9+" : unreadChatCount}
             </span>
           )}
@@ -69,14 +69,14 @@ export default function BottomNav({ activeTab, onTabChange, onAddTask, isAdmin, 
         <div className="flex items-center justify-center">
           <button
             onClick={onAddTask}
-            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-600/40 
-              transition-all duration-200 active:scale-90 hover:shadow-xl hover:shadow-orange-600/50 hover:-translate-y-0.5
-              focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-900 text-white shadow-lg shadow-blue-600/40
+              transition-all duration-200 active:scale-90 hover:shadow-xl hover:shadow-blue-600/50 hover:-translate-y-0.5
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             aria-label="Add new item"
           >
             <Plus className="h-7 w-7" strokeWidth={2.5} />
             {/* Subtle ring animation on hover */}
-            <span className="absolute inset-0 rounded-full border-2 border-orange-400 opacity-0 hover:opacity-20 transition-opacity" />
+            <span className="absolute inset-0 rounded-full border-2 border-blue-400 opacity-0 hover:opacity-20 transition-opacity" />
           </button>
         </div>
 

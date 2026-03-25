@@ -38,7 +38,7 @@ export default function FabMenu({ isOpen, onClose, onSelectTask, onSelectJob, on
       id: "task",
       label: "New Task",
       icon: ClipboardList,
-      color: "bg-orange-600 hover:bg-orange-700",
+      color: "bg-blue-600 hover:bg-blue-700",
       onClick: () => {
         onSelectTask();
         onClose();
