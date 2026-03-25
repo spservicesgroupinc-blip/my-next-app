@@ -18,21 +18,13 @@ ALTER TABLE public.task_photos ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "company_members_select_task_photos"
   ON public.task_photos FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND company_id = task_photos.company_id
-    )
-  );
+  USING (company_id = public.user_company_id());
 
 CREATE POLICY "company_members_insert_task_photos"
   ON public.task_photos FOR INSERT
   WITH CHECK (
-    auth.uid() = uploader_id AND
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND company_id = task_photos.company_id
-    )
+    auth.uid() = uploader_id
+    AND company_id = public.user_company_id()
   );
 
 CREATE POLICY "uploader_or_admin_delete_task_photos"
@@ -65,21 +57,13 @@ ALTER TABLE public.job_photos ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "company_members_select_job_photos"
   ON public.job_photos FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND company_id = job_photos.company_id
-    )
-  );
+  USING (company_id = public.user_company_id());
 
 CREATE POLICY "company_members_insert_job_photos"
   ON public.job_photos FOR INSERT
   WITH CHECK (
-    auth.uid() = uploader_id AND
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND company_id = job_photos.company_id
-    )
+    auth.uid() = uploader_id
+    AND company_id = public.user_company_id()
   );
 
 CREATE POLICY "uploader_or_admin_delete_job_photos"
@@ -115,14 +99,15 @@ VALUES (
 -- task-photos
 CREATE POLICY "task_photos_select" ON storage.objects FOR SELECT
   USING (
-    bucket_id = 'task-photos' AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+    bucket_id = 'task-photos'
+    AND public.user_company_id()::text = (string_to_array(name, '/'))[1]
   );
 
 CREATE POLICY "task_photos_insert" ON storage.objects FOR INSERT
   WITH CHECK (
-    bucket_id = 'task-photos' AND auth.uid() IS NOT NULL AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+    bucket_id = 'task-photos'
+    AND auth.uid() IS NOT NULL
+    AND public.user_company_id()::text = (string_to_array(name, '/'))[1]
   );
 
 CREATE POLICY "task_photos_delete" ON storage.objects FOR DELETE
@@ -136,14 +121,15 @@ CREATE POLICY "task_photos_delete" ON storage.objects FOR DELETE
 -- job-photos
 CREATE POLICY "job_photos_select" ON storage.objects FOR SELECT
   USING (
-    bucket_id = 'job-photos' AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+    bucket_id = 'job-photos'
+    AND public.user_company_id()::text = (string_to_array(name, '/'))[1]
   );
 
 CREATE POLICY "job_photos_insert" ON storage.objects FOR INSERT
   WITH CHECK (
-    bucket_id = 'job-photos' AND auth.uid() IS NOT NULL AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+    bucket_id = 'job-photos'
+    AND auth.uid() IS NOT NULL
+    AND public.user_company_id()::text = (string_to_array(name, '/'))[1]
   );
 
 CREATE POLICY "job_photos_delete" ON storage.objects FOR DELETE
@@ -157,14 +143,15 @@ CREATE POLICY "job_photos_delete" ON storage.objects FOR DELETE
 -- chat-images
 CREATE POLICY "chat_images_select" ON storage.objects FOR SELECT
   USING (
-    bucket_id = 'chat-images' AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+    bucket_id = 'chat-images'
+    AND public.user_company_id()::text = (string_to_array(name, '/'))[1]
   );
 
 CREATE POLICY "chat_images_insert" ON storage.objects FOR INSERT
   WITH CHECK (
-    bucket_id = 'chat-images' AND auth.uid() IS NOT NULL AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND company_id::text = (string_to_array(name, '/'))[1])
+    bucket_id = 'chat-images'
+    AND auth.uid() IS NOT NULL
+    AND public.user_company_id()::text = (string_to_array(name, '/'))[1]
   );
 
 CREATE POLICY "chat_images_delete" ON storage.objects FOR DELETE
