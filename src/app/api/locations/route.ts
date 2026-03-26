@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// GET — Admin reads all employee locations
+// GET — Admin reads all currently clocked-in employees with their GPS location
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -50,7 +50,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify admin
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -61,37 +60,49 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Get locations updated in the last 10 minutes
-  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  // Get all currently clocked-in employees (open shifts)
+  const { data: openShifts, error: shiftsError } = await supabase
+    .from("time_entries")
+    .select("user_id, job_name, clock_in")
+    .is("clock_out", null);
 
-  const { data: locations, error } = await supabase
-    .from("employee_locations")
-    .select("*")
-    .gte("updated_at", tenMinutesAgo);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (shiftsError) {
+    return NextResponse.json({ error: shiftsError.message }, { status: 500 });
   }
 
-  // Fetch profile names separately (no FK from employee_locations to profiles)
-  const userIds = (locations ?? []).map((l) => l.user_id);
-  let profileMap: Record<string, { id: string; full_name: string }> = {};
+  const userIds = (openShifts ?? []).map((s) => s.user_id);
 
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", userIds);
-
-    for (const p of profiles ?? []) {
-      profileMap[p.id] = p;
-    }
+  if (userIds.length === 0) {
+    return NextResponse.json({ locations: [] });
   }
 
-  const enriched = (locations ?? []).map((loc) => ({
-    ...loc,
-    profile: profileMap[loc.user_id] ?? null,
+  // Get their GPS locations and profiles in parallel
+  const [locationRes, profileRes] = await Promise.all([
+    supabase.from("employee_locations").select("*").in("user_id", userIds),
+    supabase.from("profiles").select("id, full_name").in("id", userIds),
+  ]);
+
+  const locationMap = Object.fromEntries(
+    (locationRes.data ?? []).map((l) => [l.user_id, l])
+  );
+  const profileMap = Object.fromEntries(
+    (profileRes.data ?? []).map((p) => [p.id, p])
+  );
+  const shiftMap = Object.fromEntries(
+    (openShifts ?? []).map((s) => [s.user_id, s])
+  );
+
+  const locations = userIds.map((uid) => ({
+    id: locationMap[uid]?.id ?? uid,
+    user_id: uid,
+    latitude: locationMap[uid]?.latitude ?? null,
+    longitude: locationMap[uid]?.longitude ?? null,
+    accuracy: locationMap[uid]?.accuracy ?? null,
+    updated_at: locationMap[uid]?.updated_at ?? null,
+    profile: profileMap[uid] ?? null,
+    job_name: shiftMap[uid]?.job_name ?? null,
+    clock_in: shiftMap[uid]?.clock_in ?? null,
   }));
 
-  return NextResponse.json({ locations: enriched });
+  return NextResponse.json({ locations });
 }

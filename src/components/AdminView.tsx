@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users,
   Clock,
@@ -10,14 +10,9 @@ import {
   Edit2,
   X,
   Save,
-  RefreshCw,
   Briefcase,
   Plus,
   Trash2,
-  MapPin,
-  Activity,
-  UserCheck,
-  CircleDot,
   FileText,
   CheckCircle,
   Eye,
@@ -31,10 +26,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePhotoUpload } from "@/lib/usePhotoUpload";
 import PhotoGallery from "@/components/photos/PhotoGallery";
 import LiveMapView from "@/components/LiveMapView";
-import ProgressRing from "@/components/ProgressRing";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-type AdminTab = "live" | "employees" | "jobs" | "map" | "payreports";
+type AdminTab = "live" | "employees" | "jobs" | "payreports";
 
 interface EmployeeWithStatus extends Profile {
   activeShift: TimeEntry | null;
@@ -42,28 +36,13 @@ interface EmployeeWithStatus extends Profile {
   email?: string;
 }
 
-interface ActivityEvent {
-  id: string;
-  type: "clock_in" | "clock_out" | "task_insert" | "task_update" | "task_delete" | "message";
-  employeeName: string;
-  taskTitle?: string;
-  jobName?: string;
-  timestamp: string;
-}
 
 export default function AdminView() {
   const supabase = useMemo(() => createClient(), []); // eslint-disable-line react-hooks/exhaustive-deps
   const { user, profile } = useAuth();
   const [adminTab, setAdminTab] = useState<AdminTab>("live");
   const [employees, setEmployees] = useState<EmployeeWithStatus[]>([]);
-  const employeesRef = useRef<EmployeeWithStatus[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [isLoading, setIsLoading] = useState(true);
-  
-  // ── Activity feed state ───────────────────────────────────────────────────
-  const [activityFeed, setActivityFeed] = useState<ActivityEvent[]>([]);
-  const elapsedTimes = useRef<Record<string, string>>({});
-  const [, setTick] = useState(0);
 
   // ── Add Employee modal state ─────────────────────────────────────────────
   const [showAddEmployee, setShowAddEmployee] = useState(false);
@@ -127,7 +106,6 @@ export default function AdminView() {
     }));
 
     setEmployees(enriched);
-    employeesRef.current = enriched;
     setIsLoading(false);
   }, [supabase]);
 
@@ -181,155 +159,12 @@ export default function AdminView() {
     loadEmails();
     loadJobs();
 
-    // Tick every second to update elapsed times
-    const tickInterval = setInterval(() => setTick((t) => t + 1), 1000);
-
-    // Real-time: watch time_entries, tasks, jobs, employee_locations
-    const sub = supabase
-      .channel("admin-live")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "time_entries" },
-        async (payload) => {
-          await loadEmployees();
-          const emp = employeesRef.current.find(
-            (e) => e.id === (payload.new as any).user_id
-          );
-          let employeeName: string = emp?.full_name ?? "";
-          if (!employeeName) {
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("id", (payload.new as any).user_id)
-              .single();
-            employeeName = prof?.full_name ?? "Unknown";
-          }
-          setActivityFeed((prev) => [
-            {
-              id: crypto.randomUUID(),
-              type: "clock_in",
-              employeeName,
-              jobName: (payload.new as any).job_name,
-              timestamp: new Date().toISOString(),
-            },
-            ...prev.slice(0, 49),
-          ]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "time_entries" },
-        async (payload) => {
-          await loadEmployees();
-          const entry = payload.new as any;
-          if (entry.clock_out) {
-            const emp = employeesRef.current.find((e) => e.id === entry.user_id);
-            let employeeName: string = emp?.full_name ?? "";
-            if (!employeeName) {
-              const { data: prof } = await supabase
-                .from("profiles")
-                .select("full_name")
-                .eq("id", entry.user_id)
-                .single();
-              employeeName = prof?.full_name ?? "Unknown";
-            }
-            setActivityFeed((prev) => [
-              {
-                id: crypto.randomUUID(),
-                type: "clock_out",
-                employeeName,
-                jobName: entry.job_name,
-                timestamp: new Date().toISOString(),
-              },
-              ...prev.slice(0, 49),
-            ]);
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "time_entries" },
-        () => {
-          loadEmployees();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "tasks" },
-        async (payload) => {
-          await loadEmployees();
-          const emp = employeesRef.current.find(
-            (e) => e.id === (payload.new as any).created_by
-          );
-          let employeeName: string = emp?.full_name ?? "";
-          if (!employeeName) {
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("id", (payload.new as any).created_by)
-              .single();
-            employeeName = prof?.full_name ?? "Unknown";
-          }
-          setActivityFeed((prev) => [
-            {
-              id: crypto.randomUUID(),
-              type: "task_insert",
-              employeeName,
-              taskTitle: (payload.new as any).title,
-              jobName: (payload.new as any).job_name,
-              timestamp: new Date().toISOString(),
-            },
-            ...prev.slice(0, 49),
-          ]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "tasks" },
-        async (payload) => {
-          await loadEmployees();
-          const emp = employeesRef.current.find(
-            (e) => e.id === (payload.new as any).updated_by
-          );
-          let employeeName: string = emp?.full_name ?? "";
-          if (!employeeName && (payload.new as any).updated_by) {
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("id", (payload.new as any).updated_by)
-              .single();
-            employeeName = prof?.full_name ?? "Unknown";
-          }
-          setActivityFeed((prev) => [
-            {
-              id: crypto.randomUUID(),
-              type: "task_update",
-              employeeName: employeeName ?? "Someone",
-              taskTitle: (payload.new as any).title,
-              timestamp: new Date().toISOString(),
-            },
-            ...prev.slice(0, 49),
-          ]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "jobs" },
-        () => loadJobs()
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") setConnectionStatus("connected");
-        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setConnectionStatus("disconnected");
-        else setConnectionStatus("connecting");
-      });
-
     const paySubChannel = supabase
       .channel("pay-submissions-live")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "pay_report_submissions" },
         async (payload) => {
-          // Fetch with the employee join
           const { data } = await supabase
             .from("pay_report_submissions")
             .select("*, employee:profiles!pay_report_submissions_employee_id_fkey(id, full_name)")
@@ -343,11 +178,8 @@ export default function AdminView() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(sub);
       supabase.removeChannel(paySubChannel);
-      clearInterval(tickInterval);
     };
-    // Do NOT include `employees` in deps — use employeesRef.current inside handlers
   }, [loadEmployees, loadEmails, loadJobs, supabase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Invite new employee ───────────────────────────────────────────────────
@@ -562,21 +394,7 @@ export default function AdminView() {
       minute: "2-digit",
     });
 
-  const calcHours = (clockIn: string) => {
-    const ms = Date.now() - new Date(clockIn).getTime();
-    return (ms / (1000 * 60 * 60)).toFixed(1);
-  };
 
-  const formatElapsed = (clockIn: string) => {
-    const ms = Date.now() - new Date(clockIn).getTime();
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  };
-
-  const clocked = employees.filter((e) => e.activeShift !== null);
-  const notClocked = employees.filter((e) => e.activeShift === null && e.is_active);
 
   return (
     <div className="flex h-full flex-col">
@@ -617,17 +435,6 @@ export default function AdminView() {
             Jobs
           </button>
           <button
-            onClick={() => setAdminTab("map")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
-              adminTab === "map"
-                ? "bg-white text-orange-600 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <MapPin className="h-3.5 w-3.5" />
-            Map
-          </button>
-          <button
             onClick={() => setAdminTab("payreports")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
               adminTab === "payreports"
@@ -643,255 +450,8 @@ export default function AdminView() {
 
       {/* ── LIVE VIEW ───────────────────────────────────────────────────────── */}
       {adminTab === "live" && (
-        <div className="flex flex-col gap-4 overflow-hidden p-4 flex-1 min-h-0">
-          {/* Connection status */}
-          <div className="flex items-center gap-1.5 mb-3">
-            <span
-              className={`inline-flex h-2 w-2 rounded-full ${
-                connectionStatus === 'connected'
-                  ? 'bg-emerald-500'
-                  : connectionStatus === 'connecting'
-                  ? 'bg-amber-400 animate-pulse'
-                  : 'bg-red-500'
-              }`}
-            />
-            <span className="text-xs text-slate-500 font-medium">
-              {connectionStatus === 'connected' ? 'Live' : connectionStatus === 'connecting' ? 'Connecting…' : 'Disconnected'}
-            </span>
-          </div>
-          {/* Summary row - 4 stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-shrink-0">
-            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
-              <p className="text-2xl font-bold text-emerald-600">{clocked.length}</p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
-                <UserCheck className="h-3 w-3" /> Clocked In
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
-              <p className="text-2xl font-bold text-slate-700">{notClocked.length}</p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1">Off / Away</p>
-            </div>
-            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
-              <p className="text-2xl font-bold text-blue-600">
-                {employees.reduce((s, e) => s + (e.activeShift ? 1 : 0), 0)}
-              </p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
-                <CircleDot className="h-3 w-3" /> Active
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white border border-slate-100 p-4 text-center shadow-sm">
-              <p className="text-2xl font-bold text-orange-600">
-                {employees.reduce((s, e) => s + e.activeTasks.length, 0)}
-              </p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1 flex items-center justify-center gap-1">
-                <ClipboardList className="h-3 w-3" /> Tasks
-              </p>
-            </div>
-          </div>
-
-          {/* Split layout - Employee cards + Activity feed */}
-          <div className="flex flex-col lg:flex-row gap-4 overflow-hidden flex-1 min-h-0">
-            {/* Left: Employee cards (58%) */}
-            <div className="flex flex-col gap-3 overflow-y-auto lg:w-[58%]">
-              <div className="flex items-center justify-between flex-shrink-0">
-                <h3 className="text-sm font-semibold text-slate-700">Employee Status</h3>
-                <button
-                  onClick={loadEmployees}
-                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Refresh
-                </button>
-              </div>
-
-              {isLoading ? (
-                <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {employees.filter((e) => e.is_active).map((emp) => {
-                    const elapsed = emp.activeShift ? formatElapsed(emp.activeShift.clock_in) : "";
-                    const topTask = emp.activeTasks[0];
-                    const taskProgress = topTask
-                      ? topTask.checklist.length > 0
-                        ? topTask.checklist.filter((c) => c.completed).length / topTask.checklist.length
-                        : 0
-                      : null;
-
-                    return (
-                      <div
-                        key={emp.id}
-                        className={`rounded-2xl p-3 border shadow-sm transition-all hover:shadow-md ${
-                          emp.activeShift
-                            ? "bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200"
-                            : "bg-white border-slate-100"
-                        }`}
-                      >
-                        {/* Header */}
-                        <div className="flex items-center gap-2.5">
-                          {/* Avatar initials */}
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 text-xs font-bold shrink-0 shadow-sm">
-                              {emp.full_name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm font-semibold text-slate-900">
-                                  {emp.full_name || "Unnamed"}
-                                </span>
-                                {emp.activeShift && (
-                                  <span className="flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <span className="font-medium">${emp.hourly_rate}/hr</span>
-                                {emp.activeShift && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="text-emerald-600 font-mono">{elapsed}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                        {emp.activeShift ? (
-                          <div className="mt-1.5 ml-[46px]">
-                            <p className="text-xs text-emerald-700 font-medium truncate">
-                              {emp.activeShift.job_name}
-                              <span className="text-emerald-600 ml-1">· since {formatTime(emp.activeShift.clock_in)}</span>
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="ml-[46px]">
-                            <p className="text-xs text-slate-400">Not clocked in</p>
-                          </div>
-                        )}
-
-                        {topTask ? (
-                          <div className="mt-2 ml-[46px] rounded-xl bg-white border border-slate-100 p-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-slate-700 truncate">
-                                  {topTask.title}
-                                </p>
-                                <p className="text-[10px] text-slate-400 truncate">
-                                  {topTask.job_name}
-                                </p>
-                              </div>
-                              {taskProgress !== null && (
-                                <ProgressRing pct={taskProgress} size={36} />
-                              )}
-                            </div>
-                            {emp.activeTasks.length > 1 && (
-                              <p className="text-[10px] text-slate-400 mt-1.5">
-                                +{emp.activeTasks.length - 1} more task
-                                {emp.activeTasks.length - 1 !== 1 ? "s" : ""}
-                              </p>
-                            )}
-                          </div>
-                        ) : emp.activeShift ? (
-                          <div className="mt-2 ml-[46px] rounded-xl bg-amber-50 border border-amber-200 p-2">
-                            <p className="text-xs text-amber-700 font-medium flex items-center gap-1.5">
-                              <CircleDot className="h-3.5 w-3.5" />
-                              No active task assigned
-                            </p>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Right: Activity feed (42%) */}
-            <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 border border-slate-100 shadow-sm overflow-y-auto lg:w-[42%]">
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Activity className="h-4 w-4 text-orange-600" />
-                <h3 className="text-sm font-semibold text-slate-700">Activity Feed</h3>
-                <span className="flex items-center gap-1 ml-auto text-[10px] font-medium text-emerald-600">
-                  <span className="flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                  </span>
-                  Live
-                </span>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-                {activityFeed.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center py-12">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 mb-3">
-                      <Activity className="h-7 w-7 text-slate-300" />
-                    </div>
-                    <p className="font-semibold text-slate-700">No Activity Yet</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Clock-ins, task updates will appear here.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-0">
-                    {activityFeed.map((event, idx) => {
-                      const iconMap = {
-                        clock_in: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />,
-                        clock_out: <CheckCircle2 className="h-3.5 w-3.5 text-slate-400" />,
-                        task_insert: <ClipboardList className="h-3.5 w-3.5 text-blue-500" />,
-                        task_update: <RefreshCw className="h-3.5 w-3.5 text-amber-500" />,
-                        task_delete: <Trash2 className="h-3.5 w-3.5 text-red-400" />,
-                        message: <Activity className="h-3.5 w-3.5 text-purple-500" />,
-                      };
-                      const timeAgo = (ts: string) => {
-                        const diff = Date.now() - new Date(ts).getTime();
-                        const mins = Math.floor(diff / 60000);
-                        if (mins < 1) return "just now";
-                        if (mins < 60) return `${mins}m ago`;
-                        const hrs = Math.floor(mins / 60);
-                        if (hrs < 24) return `${hrs}h ago`;
-                        return `${Math.floor(hrs / 24)}d ago`;
-                      };
-
-                      return (
-                        <div
-                          key={event.id}
-                          className={`flex items-start gap-3 py-2.5 ${
-                            idx < activityFeed.length - 1 ? "border-b border-slate-50" : ""
-                          }`}
-                        >
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50">
-                            {iconMap[event.type]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-slate-700">
-                              <span className="font-medium text-slate-900">{event.employeeName}</span>
-                              {event.type === "clock_in" && " clocked in"}
-                              {event.type === "clock_out" && " clocked out"}
-                              {event.type === "task_insert" && " created task"}
-                              {event.type === "task_update" && " updated task"}
-                              {event.type === "task_delete" && " deleted task"}
-                              {event.taskTitle && (
-                                <span className="text-slate-500">: {event.taskTitle}</span>
-                              )}
-                              {event.jobName && (
-                                <span className="text-slate-400"> — {event.jobName}</span>
-                              )}
-                            </p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(event.timestamp)}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <LiveMapView />
         </div>
       )}
 
@@ -1068,9 +628,6 @@ export default function AdminView() {
           )}
         </div>
       )}
-
-      {/* ── MAP VIEW ────────────────────────────────────────────────────────── */}
-      {adminTab === "map" && <LiveMapView />}
 
       {/* ── PAY REPORTS TAB ──────────────────────────────────────────────────── */}
       {adminTab === "payreports" && (
