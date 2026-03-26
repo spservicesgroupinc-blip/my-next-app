@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Edit2, Save, X } from "lucide-react";
+import { Plus, Edit2, Save, X, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Profile } from "@/lib/types";
 
 interface EmployeeRow extends Profile {
@@ -11,7 +12,9 @@ interface EmployeeRow extends Profile {
 
 export default function EmployeeManagementTab() {
   const supabase = createClient();
+  const { profile: currentProfile } = useAuth();
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [companyName, setCompanyName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -28,17 +31,26 @@ export default function EmployeeManagementTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [profilesRes, emailRes] = await Promise.all([
+
+    const [profilesRes, emailRes, companyRes] = await Promise.all([
       supabase.from("profiles").select("*").order("full_name"),
       fetch("/api/admin/employees"),
+      currentProfile?.company_id
+        ? supabase.from("companies").select("name").eq("id", currentProfile.company_id).single()
+        : Promise.resolve({ data: null }),
     ]);
+
     const emailJson = emailRes.ok ? await emailRes.json() : { emailMap: {} };
     const emailMap: Record<string, string> = emailJson.emailMap ?? {};
+
     setEmployees(
       (profilesRes.data ?? []).map((p: Profile) => ({ ...p, email: emailMap[p.id] }))
     );
+    if (companyRes.data) {
+      setCompanyName((companyRes.data as { name: string }).name ?? "");
+    }
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, currentProfile?.company_id]);
 
   useEffect(() => {
     load();
@@ -97,8 +109,62 @@ export default function EmployeeManagementTab() {
     }
   }
 
+  const admins = employees.filter((e) => e.role === "admin");
+
   return (
     <div className="space-y-4">
+      {/* Company account info card */}
+      {!loading && (
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50">
+              <Building2 className="h-4.5 w-4.5 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                Company Account
+              </p>
+              <p className="text-sm font-bold text-slate-900">
+                {companyName || "—"}
+              </p>
+            </div>
+          </div>
+          <div className="px-5 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
+              Admin Accounts
+            </p>
+            {admins.length === 0 ? (
+              <p className="text-xs text-slate-400">No admin accounts found</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {admins.map((admin) => (
+                  <li key={admin.id} className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[10px] font-bold text-orange-700">
+                      {admin.full_name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-sm font-semibold text-slate-900">
+                        {admin.full_name}
+                      </span>
+                      {admin.email && (
+                        <span className="text-xs text-slate-400 ml-1.5">
+                          — {admin.email}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <h2 className="text-base font-bold text-slate-900">Team Members</h2>
