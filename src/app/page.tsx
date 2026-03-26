@@ -740,7 +740,7 @@ function HomeInner() {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 animate-pulse">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-600 animate-pulse">
             <svg
               className="h-7 w-7 text-white"
               fill="none"
@@ -780,7 +780,7 @@ function HomeInner() {
           </p>
           <button
             onClick={retryDataLoad}
-            className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            className="w-full rounded-xl bg-orange-600 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition-colors"
           >
             Retry
           </button>

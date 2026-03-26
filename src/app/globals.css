@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-blue-600: #2563eb;
-  --color-blue-500: #3b82f6;
-  --color-yellow-100: #fef9c3;
-  --color-yellow-50: #fefce8;
+  --color-orange-600: #ea580c;
+  --color-orange-500: #f97316;
+  --color-orange-100: #ffedd5;
+  --color-orange-50: #fff7ed;
   --color-slate-900: #0f172a;
   --color-slate-800: #1e293b;
   --color-slate-700: #334155;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dcfoam-v1';
+const CACHE_NAME = 'protask-v1';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
@@ -120,7 +120,7 @@ self.addEventListener('fetch', (event) => {
 
 // Push notification handler
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? { title: 'DC FOAM', body: 'You have a new notification' };
+  const data = event.data?.json() ?? { title: 'ProTask', body: 'You have a new notification' };
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -128,7 +128,7 @@ self.addEventListener('push', (event) => {
       badge: '/icons/icon-192.png',
       data: { url: data.url || '/' },
       actions: data.actions || [],
-      tag: data.tag || ('dcfoam-' + Date.now()),
+      tag: data.tag || ('protask-' + Date.now()),
       renotify: true,
       silent: false,
     })

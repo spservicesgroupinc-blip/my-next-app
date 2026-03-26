@@ -120,17 +120,17 @@ export default function LiveMapView() {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-blue-600" />
+          <MapPin className="h-4 w-4 text-orange-600" />
           <h3 className="text-sm font-semibold text-slate-700">
             Employee Locations
           </h3>
-          <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">
             {locations.length} active
           </span>
         </div>
         <button
           onClick={loadLocations}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-600 transition-colors"
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-600 transition-colors"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
           Refresh

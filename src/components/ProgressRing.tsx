@@ -6,7 +6,7 @@ export default function ProgressRing({ pct, size = 44 }: { pct: number; size?: n
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth="4" />
       <circle
         cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke={pct === 1 ? "#10b981" : "#3b82f6"} strokeWidth="4"
+        stroke={pct === 1 ? "#10b981" : "#f97316"} strokeWidth="4"
         strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}

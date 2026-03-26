@@ -2,11 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, ChevronDown, Settings } from "lucide-react";
+import { CheckSquare, Bell, LogOut, ChevronDown, Settings } from "lucide-react";
 import { TabId, NotificationItem } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationDrawer from "@/components/NotificationDrawer";
-import { DCFoamIcon, DCFoamWordmark } from "@/components/DCFoamLogo";
 
 interface HeaderProps {
   activeTab: TabId;
@@ -46,13 +45,18 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
     <header className="sticky top-0 z-50 flex items-center justify-between bg-white/95 backdrop-blur-sm px-4 py-3 shadow-sm">
       <div className="flex items-center gap-2.5">
         <button
-          className="transition-all active:scale-95 hover:opacity-85 rounded-[7px] shadow-md shadow-black/20"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-md shadow-orange-600/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-orange-600/30"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           aria-label="Go to top"
         >
-          <DCFoamIcon size={36} />
+          <CheckSquare className="h-5 w-5 text-white" />
         </button>
-        <DCFoamWordmark subtitle={tabLabels[activeTab]} />
+        <div>
+          <span className="text-lg font-bold text-slate-900">
+            Pro<span className="text-orange-600">Task</span>
+          </span>
+          <p className="text-[10px] text-slate-400 font-medium -mt-0.5">{tabLabels[activeTab]}</p>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -63,7 +67,7 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 ring-2 ring-white" />
+            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 ring-2 ring-white" />
           )}
         </button>
 
@@ -97,7 +101,7 @@ export default function Header({ activeTab, userInitials, notifications, onMarkA
                   {profile?.full_name}
                 </p>
                 {isAdmin && (
-                  <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wide">
+                  <span className="text-[10px] font-semibold text-orange-600 uppercase tracking-wide">
                     Administrator
                   </span>
                 )}

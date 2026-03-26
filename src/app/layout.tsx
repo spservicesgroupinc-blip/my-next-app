@@ -9,13 +9,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "DC FOAM - Foam Services",
-  description: "Foam services app with task management, time tracking, chat, and calendar",
+  title: "ProTask - Project Management for Contractors",
+  description: "Task management app for contractors with time tracking, chat, and calendar",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "DC FOAM",
+    title: "ProTask",
   },
   icons: {
     icon: "/icons/icon-192.png",
@@ -29,7 +29,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#2563eb",
+  themeColor: "#ea580c",
 };
 
 export default function RootLayout({
@@ -43,7 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="DC FOAM" />
+        <meta name="apple-mobile-web-app-title" content="ProTask" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="format-detection" content="telephone=no" />
       </head>
