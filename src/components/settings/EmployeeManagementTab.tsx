@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Save, X, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { Profile } from "@/lib/types";
 
 interface EmployeeRow extends Profile {
@@ -12,7 +11,6 @@ interface EmployeeRow extends Profile {
 
 export default function EmployeeManagementTab() {
   const supabase = createClient();
-  const { profile: currentProfile } = useAuth();
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -32,25 +30,33 @@ export default function EmployeeManagementTab() {
   const load = useCallback(async () => {
     setLoading(true);
 
-    const [profilesRes, emailRes, companyRes] = await Promise.all([
+    const [profilesRes, emailRes] = await Promise.all([
       supabase.from("profiles").select("*").order("full_name"),
       fetch("/api/admin/employees"),
-      currentProfile?.company_id
-        ? supabase.from("companies").select("name").eq("id", currentProfile.company_id).single()
-        : Promise.resolve({ data: null }),
     ]);
 
     const emailJson = emailRes.ok ? await emailRes.json() : { emailMap: {} };
     const emailMap: Record<string, string> = emailJson.emailMap ?? {};
+    const profilesList = (profilesRes.data ?? []).map((p: Profile) => ({
+      ...p,
+      email: emailMap[p.id],
+    }));
 
-    setEmployees(
-      (profilesRes.data ?? []).map((p: Profile) => ({ ...p, email: emailMap[p.id] }))
-    );
-    if (companyRes.data) {
-      setCompanyName((companyRes.data as { name: string }).name ?? "");
+    setEmployees(profilesList);
+
+    // Derive company_id from the loaded profiles (all share the same company)
+    const companyId = profilesList[0]?.company_id;
+    if (companyId) {
+      const { data: company } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", companyId)
+        .single();
+      if (company) setCompanyName((company as { name: string }).name ?? "");
     }
+
     setLoading(false);
-  }, [supabase, currentProfile?.company_id]);
+  }, [supabase]);
 
   useEffect(() => {
     load();
